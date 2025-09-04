@@ -1,18 +1,17 @@
-import { useSnackbar } from "@/components/react-native-paper/snackbar/global-snackbar-store";
 import { pb } from "@/lib/pb/client";
+import { useSnackbar } from "@/lib/react-native-paper/snackbar/global-snackbar-store";
 import {
-  quickAddToDefaultWatchlistMutationOptions,
-  removeFromWatchListItemsMutationOptions,
+    quickAddToDefaultWatchlistMutationOptions,
+    removeFromWatchListItemsMutationOptions,
 } from "@/lib/tanstack/operations/watchlist-items/query-options";
 // import { useIsInWatchlist } from "@/lib/tanstack/operations/watchlist/hooks";
 // import { WatchlistItemUtils } from "./WatchlistItemUtils";
+import { markWachedMutationOptions } from "@/lib/tanstack/operations/watchlist/operations-options";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import React from "react";
 import { Alert, StyleSheet, View } from "react-native";
 import { IconButton, useTheme } from "react-native-paper";
 import { UnifiedWatchlistItem } from "./types";
-import { markWachedMutationOptions } from "@/lib/tanstack/operations/watchlist/operations-options";
-import { TMDBDiscoverResponseWithWatched } from "@/lib/tanstack/operations/discover/tmdb-hooks";
 
 interface WatchlistItemActionsProps {
   item: UnifiedWatchlistItem & { mediaType: string; watched?: boolean; inWatchList?: string[] };
