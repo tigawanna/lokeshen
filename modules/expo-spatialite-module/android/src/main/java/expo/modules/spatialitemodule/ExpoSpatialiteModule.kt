@@ -5,9 +5,7 @@ import expo.modules.kotlin.modules.ModuleDefinition
 import android.os.Environment
 import android.util.Log
 import java.io.File
-import jsqlite.Database
-import jsqlite.Constants
-import jsqlite.Stmt
+import jsqlite.*
 
 class ExpoSpatialiteModule : Module() {
   private var db: Database? = null
@@ -68,7 +66,7 @@ class ExpoSpatialiteModule : Module() {
         if (isSpatial) {
           try {
             spatialInitialized = db?.prepare("SELECT count(1) FROM spatial_ref_sys LIMIT 1")?.step() ?: false
-          } catch (e: jsqlite.Exception) {
+          } catch (e: Exception) {
             if (e.message?.trim()?.startsWith("no such table: spatial_ref_sys") == true) {
               db?.exec("SELECT InitSpatialMetaData(1)", null)
               spatialInitialized = true
@@ -94,7 +92,7 @@ class ExpoSpatialiteModule : Module() {
         val result = mutableMapOf<String, Any>()
         result["isConnected"] = isConnected
         result
-      } catch (e: jsqlite.Exception) {
+      } catch (e: Exception) {
         Log.e(TAG, "Error closing database", e)
         throw e
       }
@@ -115,7 +113,7 @@ class ExpoSpatialiteModule : Module() {
           }
           val row = mutableMapOf<String, Any?>()
           for (i in 0 until colCount) {
-            val columnName = stmt.column_name(i).toLowerCase()
+            val columnName = stmt.column_name(i).lowercase()
             when (stmt.column_type(i)) {
               Constants.SQLITE3_TEXT -> row[columnName] = stmt.column_string(i)
               Constants.SQLITE_INTEGER -> row[columnName] = stmt.column_long(i)
@@ -132,7 +130,7 @@ class ExpoSpatialiteModule : Module() {
         result["cols"] = colCount
         result["data"] = rows
         result
-      } catch (e: jsqlite.Exception) {
+      } catch (e: Exception) {
         Log.e(TAG, "Error executing query: $query", e)
         throw e
       }

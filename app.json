@@ -34,7 +34,8 @@
           "resizeMode": "contain",
           "backgroundColor": "#ffffff"
         }
-      ]
+      ],
+      "./modules/expo-spatialite-module/plugin"
     ],
     "experiments": {
       "typedRoutes": true

@@ -80,9 +80,6 @@ importers:
       react-native:
         specifier: 0.79.5
         version: 0.79.5(@babel/core@7.28.3)(@types/react@19.0.14)(react@19.0.0)
-      react-native-fnc-spatialite:
-        specifier: ^1.0.4
-        version: 1.0.4(react-native@0.79.5(@babel/core@7.28.3)(@types/react@19.0.14)(react@19.0.0))(react@19.0.0)
       react-native-gesture-handler:
         specifier: ~2.24.0
         version: 2.24.0(react-native@0.79.5(@babel/core@7.28.3)(@types/react@19.0.14)(react@19.0.0))(react@19.0.0)
@@ -3291,12 +3288,6 @@ packages:
 
   react-native-edge-to-edge@1.6.0:
     resolution: {integrity: sha512-2WCNdE3Qd6Fwg9+4BpbATUxCLcouF6YRY7K+J36KJ4l3y+tWN6XCqAC4DuoGblAAbb2sLkhEDp4FOlbOIot2Og==}
-    peerDependencies:
-      react: '*'
-      react-native: '*'
-
-  react-native-fnc-spatialite@1.0.4:
-    resolution: {integrity: sha512-ovxtUeNp2V6nQqJ2GT85MOLZhAPY31sgPeXA680Mm7a6kFHBCWF+h0P2YYJ7l6e3OLEWqLqy2/gleCf0VguN0Q==}
     peerDependencies:
       react: '*'
       react-native: '*'
@@ -8032,11 +8023,6 @@ snapshots:
   react-is@19.1.1: {}
 
   react-native-edge-to-edge@1.6.0(react-native@0.79.5(@babel/core@7.28.3)(@types/react@19.0.14)(react@19.0.0))(react@19.0.0):
-    dependencies:
-      react: 19.0.0
-      react-native: 0.79.5(@babel/core@7.28.3)(@types/react@19.0.14)(react@19.0.0)
-
-  react-native-fnc-spatialite@1.0.4(react-native@0.79.5(@babel/core@7.28.3)(@types/react@19.0.14)(react@19.0.0))(react@19.0.0):
     dependencies:
       react: 19.0.0
       react-native: 0.79.5(@babel/core@7.28.3)(@types/react@19.0.14)(react@19.0.0)

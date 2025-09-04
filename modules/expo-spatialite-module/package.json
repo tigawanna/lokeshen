@@ -1,0 +1,44 @@
+{
+  "name": "expo-spatialite-module",
+  "version": "1.0.4",
+  "description": "Expo-compatible native module for SQLite and Spatialite databases",
+  "main": "build/index.js",
+  "types": "build/index.d.ts",
+  "files": [
+    "build",
+    "android",
+    "src",
+    "expo-module.config.json",
+    "plugin"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "clean": "rm -rf build",
+    "lint": "eslint .",
+    "prepare": "npm run build"
+  },
+  "keywords": [
+    "expo",
+    "sqlite",
+    "spatialite",
+    "database",
+    "react-native"
+  ],
+  "repository": {},
+  "bugs": {},
+  "author": "Your Name <your.email@example.com> (https://github.com/your-username)",
+  "license": "MIT",
+  "homepage": "https://github.com/your-username/expo-spatialite-module#readme",
+  "dependencies": {
+    "expo-modules-core": "^2.0.0"
+  },
+  "devDependencies": {
+    "@types/react": "^18.0.0",
+    "typescript": "^5.0.0"
+  },
+  "peerDependencies": {
+    "expo": "*",
+    "react": "*",
+    "react-native": "*"
+  }
+}
