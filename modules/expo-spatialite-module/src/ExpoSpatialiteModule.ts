@@ -1,11 +1,16 @@
 import { NativeModule, requireNativeModule } from 'expo';
 
-import { ExpoSpatialiteModuleEvents } from './ExpoSpatialiteModule.types';
+import { 
+  ExpoSpatialiteModuleEvents, 
+  DatabaseParams, 
+  ConnectionResult, 
+  QueryResult 
+} from './ExpoSpatialiteModule.types';
 
 declare class ExpoSpatialiteModule extends NativeModule<ExpoSpatialiteModuleEvents> {
-  PI: number;
-  hello(): string;
-  setValueAsync(value: string): Promise<void>;
+  connect(params: DatabaseParams): Promise<ConnectionResult>;
+  close(): Promise<ConnectionResult>;
+  executeQuery(query: string): Promise<QueryResult>;
 }
 
 // This call loads the native module object from the JSI.
