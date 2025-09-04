@@ -17,7 +17,7 @@
         "backgroundColor": "#ffffff"
       },
       "edgeToEdgeEnabled": true,
-      "package": "com.anonymous.lokeshen"
+      "package": "com.tigawanna.lokeshen"
     },
     "web": {
       "bundler": "metro",
@@ -34,8 +34,7 @@
           "resizeMode": "contain",
           "backgroundColor": "#ffffff"
         }
-      ],
-      "./modules/expo-spatialite-module/plugin"
+      ]
     ],
     "experiments": {
       "typedRoutes": true
