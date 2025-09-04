@@ -9,6 +9,7 @@ import { useSettingsStore } from "@/store/settings-store";
 import { useThemeSetup } from "@/hooks/theme/use-theme-setup";
 import "react-native-reanimated";
 
+
 export default function RootLayout() {
   const { dynamicColors } = useSettingsStore();
   const { colorScheme, paperTheme } = useThemeSetup(dynamicColors);
