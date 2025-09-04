@@ -1,12 +1,10 @@
-import { Image } from "expo-image";
-import { Platform, StyleSheet } from "react-native";
+import { StyleSheet, View } from "react-native";
 import { Text } from "react-native-paper";
-import { View } from "react-native-reanimated/lib/typescript/Animated";
 
 export default function ExploreScreen() {
   return (
     <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
-      <Text>Explore screen</Text>
+      <Text variant="headlineMedium">Explore screen</Text>
     </View>
   );
 }

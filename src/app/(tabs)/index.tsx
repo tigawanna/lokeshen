@@ -1,13 +1,12 @@
-import { Image } from "expo-image";
-import { Platform, StyleSheet, View } from "react-native";
+import { StyleSheet, View } from "react-native";
 import { Text } from "react-native-paper";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 export default function HomeScreen() {
   const { top } = useSafeAreaInsets();
   return (
-    <View style={{ flex: 1, paddingTop: top + 12 }}>
-      <Text>Home screen</Text>
+    <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
+      <Text variant="headlineMedium">Home screen</Text>
     </View>
   );
 }
