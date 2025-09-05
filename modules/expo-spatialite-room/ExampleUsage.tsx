@@ -11,7 +11,7 @@ import ExpoSpatialiteRoom, {
   InitDatabaseResult, 
   FindPointsResult, 
   QueryResult 
-} from 'expo-spatialite-room';
+} from './index';
 
 const SpatialiteExample = () => {
   const [databaseStatus, setDatabaseStatus] = useState<string>('');
@@ -26,7 +26,7 @@ const SpatialiteExample = () => {
       
       const result: InitDatabaseResult = await ExpoSpatialiteRoom.initDatabase('kenya_locations.db');
       setDatabaseStatus(`Database initialized: ${JSON.stringify(result)}`);
-    } catch (err) {
+    } catch (err:any) {
       setError(`Database initialization error: ${err.message}`);
       setDatabaseStatus('Not initialized');
     }
@@ -39,7 +39,7 @@ const SpatialiteExample = () => {
       
       await ExpoSpatialiteRoom.createSpatialTable('locations', 'geometry', 'POINT', 4326);
       setDatabaseStatus('Locations table created successfully');
-    } catch (err) {
+    } catch (err:any) {
       setError(`Table creation error: ${err.message}`);
     }
   };
@@ -78,7 +78,7 @@ const SpatialiteExample = () => {
       );
       
       setDatabaseStatus('Sample locations inserted successfully');
-    } catch (err) {
+    } catch (err:any) {
       setError(`Location insertion error: ${err.message}`);
     }
   };
@@ -98,7 +98,7 @@ const SpatialiteExample = () => {
       );
       
       setNearbyPoints(`Found ${result.points.length} locations:\n${JSON.stringify(result.points, null, 2)}`);
-    } catch (err) {
+    } catch (err:any) {
       setError(`Search error: ${err.message}`);
       setNearbyPoints('');
     }
@@ -115,7 +115,7 @@ const SpatialiteExample = () => {
       );
       
       setQueryResult(`Query result: ${JSON.stringify(result, null, 2)}`);
-    } catch (err) {
+    } catch (err:any) {
       setError(`Query error: ${err.message}`);
       setQueryResult('');
     }
@@ -128,7 +128,7 @@ const SpatialiteExample = () => {
       
       await ExpoSpatialiteRoom.closeDatabase();
       setDatabaseStatus('Database closed successfully');
-    } catch (err) {
+    } catch (err:any) {
       setError(`Close error: ${err.message}`);
       setDatabaseStatus('Unknown');
     }
