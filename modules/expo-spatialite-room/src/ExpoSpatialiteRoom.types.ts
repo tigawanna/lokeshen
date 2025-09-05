@@ -1,19 +1,66 @@
-import type { StyleProp, ViewStyle } from 'react-native';
+// Events payload types
+export type ChangeEventPayload = {
+  value: string;
+};
 
 export type OnLoadEventPayload = {
   url: string;
 };
 
-export type ExpoSpatialiteRoomModuleEvents = {
+// Module events
+export type ExpoSpatialiteRoomEvents = {
   onChange: (params: ChangeEventPayload) => void;
 };
 
-export type ChangeEventPayload = {
-  value: string;
+// Database initialization result
+export type InitDatabaseResult = {
+  success: boolean;
+  path: string;
+  spatialiteVersion: string;
 };
 
-export type ExpoSpatialiteRoomViewProps = {
-  url: string;
-  onLoad: (event: { nativeEvent: OnLoadEventPayload }) => void;
-  style?: StyleProp<ViewStyle>;
+// Query execution result
+export type QueryResult = {
+  success: boolean;
+  rowCount: number;
+  data: Array<Record<string, any>>;
+};
+
+// Statement execution result
+export type StatementResult = {
+  success: boolean;
+  rowsAffected: number;
+};
+
+// Spatial table creation result
+export type CreateTableResult = {
+  success: boolean;
+  message: string;
+};
+
+// Point insertion result
+export type InsertPointResult = {
+  success: boolean;
+  message: string;
+};
+
+// Point within radius result
+export type PointWithinRadius = {
+  id: number;
+  name: string;
+  description: string;
+  longitude: number;
+  latitude: number;
+  distance: number;
+};
+
+export type FindPointsResult = {
+  success: boolean;
+  points: PointWithinRadius[];
+};
+
+// Database closing result
+export type CloseDatabaseResult = {
+  success: boolean;
+  message: string;
 };

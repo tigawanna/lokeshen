@@ -1,7 +1,7 @@
 apply plugin: 'com.android.library'
 
 group = 'expo.modules.spatialiteroom'
-version = '0.7.2'
+version = '1.0.0'
 
 def expoModulesCorePlugin = new File(project(":expo-modules-core").projectDir.absolutePath, "ExpoModulesCorePlugin.gradle")
 apply from: expoModulesCorePlugin
@@ -35,9 +35,15 @@ android {
   namespace "expo.modules.spatialiteroom"
   defaultConfig {
     versionCode 1
-    versionName "0.7.2"
+    versionName "1.0.0"
   }
   lintOptions {
     abortOnError false
   }
+}
+
+dependencies {
+  implementation 'com.github.anboralabs:spatia-room:0.4.0'
+  implementation "androidx.core:core-ktx:1.13.1"
+  implementation "org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.3"
 }

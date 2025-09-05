@@ -34,7 +34,8 @@
           "resizeMode": "contain",
           "backgroundColor": "#ffffff"
         }
-      ]
+      ],
+      "./modules/expo-spatialite-room"
     ],
     "experiments": {
       "typedRoutes": true
