@@ -1,0 +1,9 @@
+{
+  "platforms": ["apple", "android", "web"],
+  "apple": {
+    "modules": ["ExpoSpatialiteRoomModule"]
+  },
+  "android": {
+    "modules": ["expo.modules.spatialiteroom.ExpoSpatialiteRoomModule"]
+  }
+}
