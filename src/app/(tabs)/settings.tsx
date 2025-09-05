@@ -1,11 +1,10 @@
-import { useThemeStore, useSettingsStore } from "@/store/settings-store";
+import { useSettingsStore, useThemeStore } from "@/store/settings-store";
 // import { Stack, useRouter } from "expo-router";
 import { ScrollView, StyleSheet } from "react-native";
 import { Divider, List, Switch } from "react-native-paper";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 export default function Settings() {
-  const { top } = useSafeAreaInsets();
+
   const { isDarkMode, toggleTheme } = useThemeStore();
   const { dynamicColors, toggleDynamicColors } = useSettingsStore();
   // const router = useRouter();
