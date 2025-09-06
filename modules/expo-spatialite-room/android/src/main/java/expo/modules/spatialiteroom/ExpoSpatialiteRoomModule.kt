@@ -170,7 +170,8 @@ class ExpoSpatialiteRoomModule : Module() {
     }
 
     // Defines a JavaScript function that creates a spatial table
-    AsyncFunction("createSpatialTable") { tableName: String, geometryColumn: String, geometryType: String, srid: Int ->
+    AsyncFunction("createSpatialTable") {
+       tableName: String, geometryColumn: String, geometryType: String, srid: Int ->
       try {
         if (database == null) {
           throw IllegalStateException("Database not initialized. Call initDatabase first.")
