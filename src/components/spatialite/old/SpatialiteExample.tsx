@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
-import { useDatabaseInitialization } from '../../hooks/useDatabaseInitialization';
-import SpatialiteTestScreen from './SpatialiteTestScreen';
+import { useDatabaseInitialization } from '../../../hooks/useDatabaseInitialization';
 import DatabaseInitializationScreen from './DatabaseInitializationScreen';
 import DataLoadingScreen from './DataLoadingScreen';
+import SpatialiteTestScreen from './SpatialiteTestScreen';
 
 const SpatialiteExample = () => {
   const { 

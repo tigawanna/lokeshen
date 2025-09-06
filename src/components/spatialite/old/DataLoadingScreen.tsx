@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { ActivityIndicator, Platform, ProgressBarAndroid, StyleSheet, Text, View } from 'react-native';
-import ExpoSpatialiteRoom from '../../../modules/expo-spatialite-room';
-import { SUB_COUNTY_MAPPINGS } from '../../data/sub_county';
-import { WARDS_GEOJSON } from '../../data/wards_geojson';
+import ExpoSpatialiteRoom from '../../../../modules/expo-spatialite-room';
+import { SUB_COUNTY_MAPPINGS } from '../../../data/sub_county';
+import { WARDS_GEOJSON } from '../../../data/wards_geojson';
 
 interface LoadingState {
   status: 'initializing' | 'loading' | 'completed' | 'error';
