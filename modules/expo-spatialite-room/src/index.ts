@@ -19,7 +19,10 @@ export function createDatabasePath(databaseName: string, directory?: string): st
   }
 
   const baseDir = directory ? `${documentsDirectory}${directory}/` : documentsDirectory;
-  return `${baseDir}${databaseName}`;
+  const fullPath = `${baseDir}${databaseName}`;
+
+  // Return the path without file:// scheme for Android compatibility
+  return fullPath.replace('file://', '');
 }
 
 /**
@@ -35,17 +38,10 @@ export async function importDatabaseFromAssetAsync(
   directory?: string
 ) {
   const asset = await Asset.fromModule(assetSource.assetId).downloadAsync();
-  console.log("\n\n====");
-  console.log("importDatabaseFromAssetAsync asset ===>> ", asset.name, asset.localUri);
-  console.log("====\n");
   if (!asset.localUri) {
     throw new Error(`Unable to get the localUri from asset ${assetSource.assetId}`);
   }
-
   const path = createDatabasePath(databaseName, directory);
-  console.log("\n====");
-  console.log(" cretaed database path ===>> ", path);
-  console.log("====\n\n");
   return await ExpoSpatialiteRoomModule.importAssetDatabaseAsync(
     path,
     asset.localUri,
@@ -76,6 +72,7 @@ export async function executeStatement(statement: string, params?: any[]) {
 
 /**
  * Creates a spatial table
+ 
  */
 export async function createSpatialTable(
   tableName: string,

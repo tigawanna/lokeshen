@@ -36,7 +36,14 @@ class ExpoSpatialiteRoomModule : Module() {
                 
                 Log.d(TAG, "Importing asset database from: $assetDatabasePath to: $databasePath")
                 
-                val dbFile = File(databasePath)
+                // Handle both URI and regular file paths for destination
+                val destinationPath = if (databasePath.startsWith("file://")) {
+                    Uri.parse(databasePath).path ?: throw IllegalArgumentException("Invalid destination path")
+                } else {
+                    databasePath
+                }
+                
+                val dbFile = File(destinationPath)
                 
                 // Create parent directories if they don't exist
                 dbFile.parentFile?.mkdirs()
@@ -52,23 +59,25 @@ class ExpoSpatialiteRoomModule : Module() {
                 
                 // Parse the asset URI and get the file
                 val assetUri = Uri.parse(assetDatabasePath)
-                val assetFile = File(assetUri.path ?: throw IllegalArgumentException("Invalid asset path"))
+                val assetPath = assetUri.path ?: throw IllegalArgumentException("Invalid asset path")
+                val assetFile = File(assetPath)
                 
                 if (!assetFile.isFile) {
                     throw IllegalStateException("Asset file does not exist: $assetDatabasePath")
                 }
                 
                 Log.d(TAG, "Asset file exists, size: ${assetFile.length()} bytes")
+                Log.d(TAG, "Copying from: ${assetFile.absolutePath} to: ${dbFile.absolutePath}")
                 
                 // Copy the asset file to the destination
                 assetFile.copyTo(dbFile, forceOverwrite)
                 
-                Log.d(TAG, "Database imported successfully to: $databasePath")
+                Log.d(TAG, "Database imported successfully to: ${dbFile.absolutePath}")
                 
                 mapOf(
                     "success" to true,
                     "message" to "Database imported successfully",
-                    "path" to databasePath
+                    "path" to dbFile.absolutePath
                 )
             } catch (e: Exception) {
                 Log.e(TAG, "Error importing asset database from: $assetDatabasePath to: $databasePath", e)
