@@ -13,6 +13,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.io.File
 import java.io.FileOutputStream
+import android.net.Uri
 
 class ExpoSpatialiteRoomModule : Module() {
     private var database: SupportSQLiteDatabase? = null
@@ -27,6 +28,53 @@ class ExpoSpatialiteRoomModule : Module() {
 
     override fun definition() = ModuleDefinition {
         Name(NAME)
+
+        // Imports an asset database to the specified path
+        AsyncFunction("importAssetDatabaseAsync") { databasePath: String, assetDatabasePath: String, forceOverwrite: Boolean ->
+            try {
+                val context = appContext.reactContext ?: throw IllegalStateException("React context not available")
+                
+                Log.d(TAG, "Importing asset database from: $assetDatabasePath to: $databasePath")
+                
+                val dbFile = File(databasePath)
+                
+                // Create parent directories if they don't exist
+                dbFile.parentFile?.mkdirs()
+                
+                // Check if database already exists and forceOverwrite is false
+                if (dbFile.exists() && !forceOverwrite) {
+                    Log.d(TAG, "Database already exists and forceOverwrite is false, skipping import")
+                    return@AsyncFunction mapOf(
+                        "success" to true,
+                        "message" to "Database already exists, skipping import"
+                    )
+                }
+                
+                // Parse the asset URI and get the file
+                val assetUri = Uri.parse(assetDatabasePath)
+                val assetFile = File(assetUri.path ?: throw IllegalArgumentException("Invalid asset path"))
+                
+                if (!assetFile.isFile) {
+                    throw IllegalStateException("Asset file does not exist: $assetDatabasePath")
+                }
+                
+                Log.d(TAG, "Asset file exists, size: ${assetFile.length()} bytes")
+                
+                // Copy the asset file to the destination
+                assetFile.copyTo(dbFile, forceOverwrite)
+                
+                Log.d(TAG, "Database imported successfully to: $databasePath")
+                
+                mapOf(
+                    "success" to true,
+                    "message" to "Database imported successfully",
+                    "path" to databasePath
+                )
+            } catch (e: Exception) {
+                Log.e(TAG, "Error importing asset database from: $assetDatabasePath to: $databasePath", e)
+                throw e
+            }
+        }
 
         // Initializes the Spatialite database from a full file path
         AsyncFunction("initDatabase") { dbPath: String ->

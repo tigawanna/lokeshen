@@ -1,14 +1,14 @@
-import { registerWebModule, NativeModule } from 'expo';
+import { NativeModule, registerWebModule } from 'expo';
 
-import { 
-  ChangeEventPayload,
-  InitDatabaseResult,
-  QueryResult,
-  StatementResult,
-  CreateTableResult,
-  InsertPointResult,
-  FindPointsResult,
-  CloseDatabaseResult
+import {
+    ChangeEventPayload,
+    CloseDatabaseResult,
+    CreateTableResult,
+    FindPointsResult,
+    InitDatabaseResult,
+    InsertPointResult,
+    QueryResult,
+    StatementResult
 } from './ExpoSpatialiteRoom.types';
 
 type ExpoSpatialiteRoomEvents = {
@@ -16,6 +16,11 @@ type ExpoSpatialiteRoomEvents = {
 }
 
 class ExpoSpatialiteRoomModule extends NativeModule<ExpoSpatialiteRoomEvents> {
+  async importAssetDatabaseAsync(databasePath: string, assetDatabasePath: string, forceOverwrite: boolean): Promise<ImportAssetDatabaseResult> {
+    console.warn('ExpoSpatialiteRoomModule: importAssetDatabaseAsync() is not supported on web');
+    return { success: false, message: 'Not supported on web' };
+  }
+  
   async initDatabase(dbName: string): Promise<InitDatabaseResult> {
     console.warn('ExpoSpatialiteRoomModule: initDatabase() is not supported on web');
     return { success: false, path: '', spatialiteVersion: 'web' };

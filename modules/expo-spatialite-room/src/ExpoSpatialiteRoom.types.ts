@@ -64,3 +64,10 @@ export type CloseDatabaseResult = {
   success: boolean;
   message: string;
 };
+
+// Asset database import result
+export type ImportAssetDatabaseResult = {
+  success: boolean;
+  message: string;
+  path?: string;
+};

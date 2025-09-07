@@ -1,17 +1,18 @@
 import { NativeModule, requireNativeModule } from 'expo';
 
-import { 
-  ExpoSpatialiteRoomEvents,
-  InitDatabaseResult,
-  QueryResult,
-  StatementResult,
-  CreateTableResult,
-  InsertPointResult,
-  FindPointsResult,
-  CloseDatabaseResult
+import {
+    CloseDatabaseResult,
+    CreateTableResult,
+    ExpoSpatialiteRoomEvents,
+    FindPointsResult,
+    InitDatabaseResult,
+    InsertPointResult,
+    QueryResult,
+    StatementResult
 } from './ExpoSpatialiteRoom.types';
 
 declare class ExpoSpatialiteRoomModule extends NativeModule<ExpoSpatialiteRoomEvents> {
+  importAssetDatabaseAsync(databasePath: string, assetDatabasePath: string, forceOverwrite: boolean): Promise<ImportAssetDatabaseResult>;
   initDatabase(dbName: string): Promise<InitDatabaseResult>;
   executeQuery(query: string, params?: any[]): Promise<QueryResult>;
   executeStatement(statement: string, params?: any[]): Promise<StatementResult>;
