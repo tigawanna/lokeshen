@@ -35,7 +35,9 @@
           "backgroundColor": "#ffffff"
         }
       ],
-      "./modules/expo-spatialite-room/plugin"
+      "./modules/expo-spatialite-room/plugin",
+      "expo-asset",
+      "expo-sqlite"
     ],
     "experiments": {
       "typedRoutes": true
