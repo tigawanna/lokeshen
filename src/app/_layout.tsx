@@ -40,7 +40,7 @@ export default function RootLayout() {
       <PaperProvider theme={paperTheme}>
         <GestureHandlerRootView style={{ flex: 1 }}>
           <StatusBar style={colorScheme === "dark" ? "light" : "dark"} />
-          <ExpoSpatialiteWrapper>
+          {/* <ExpoSpatialiteWrapper> */}
             <QueryClientProvider client={queryClient}>
               <ThemeProvider value={colorScheme === "dark" ? DarkTheme : DefaultTheme}>
                 <Stack>
@@ -49,7 +49,7 @@ export default function RootLayout() {
                 </Stack>
               </ThemeProvider>
             </QueryClientProvider>
-          </ExpoSpatialiteWrapper>
+          {/* </ExpoSpatialiteWrapper> */}
           <GlobalSnackbar />
         </GestureHandlerRootView>
       </PaperProvider>

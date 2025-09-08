@@ -251,20 +251,40 @@ async function setupDatabaseAsync({
   assetSource,
   onInit,
 }: Pick<ExpoSpatialiteProviderProps, "databaseName" | "location" | "assetSource" | "onInit">): Promise<string> {
-  // Create database path
+  let dbPath: string;
   
-  const dbPath = location 
-    ? `${location.replace(/\/$/, '')}/${databaseName}` 
-    : createDatabasePath(databaseName);
-
-  // Import asset database if specified
+  // Import asset database first if specified
   if (assetSource != null) {
+    // For asset imports, always use file-based storage first
+    const tempPath = location && location !== ":memory:" 
+      ? location 
+      : undefined;
+      
     await importDatabaseFromAssetAsync(
       databaseName,
       assetSource.assetId,
       assetSource.forceOverwrite ?? false,
-      location
+      tempPath
     );
+    
+    // If we want memory but imported from asset, we still need the file path
+    if (location === ":memory:") {
+      console.warn("Cannot use :memory: with assetSource. Using file-based database instead.");
+      dbPath = createDatabasePath(databaseName);
+    } else {
+      dbPath = location 
+        ? `${location.replace(/\/$/, '')}/${databaseName}` 
+        : createDatabasePath(databaseName);
+    }
+  } else {
+    // No asset import - use specified location
+    if (location === ":memory:") {
+      dbPath = ":memory:";
+    } else {
+      dbPath = location 
+        ? `${location.replace(/\/$/, '')}/${databaseName}` 
+        : createDatabasePath(databaseName);
+    }
   }
 
   // Initialize the Spatialite database

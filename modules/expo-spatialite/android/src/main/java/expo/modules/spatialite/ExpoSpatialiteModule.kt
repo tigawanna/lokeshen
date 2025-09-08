@@ -10,6 +10,7 @@ import android.database.Cursor
 import java.io.File
 import java.io.FileOutputStream
 import android.net.Uri
+import androidx.core.net.toUri
 
 class ExpoSpatialiteModule : Module() {
     private var database: SQLiteDatabase? = null
@@ -52,7 +53,7 @@ class ExpoSpatialiteModule : Module() {
                 
                 // Handle both URI and regular file paths for destination
                 val destinationPath = if (databasePath.startsWith("file://")) {
-                    Uri.parse(databasePath).path ?: throw IllegalArgumentException("Invalid destination path")
+                    databasePath.toUri().path ?: throw IllegalArgumentException("Invalid destination path")
                 } else {
                     databasePath
                 }
@@ -99,23 +100,32 @@ class ExpoSpatialiteModule : Module() {
                 
                 Log.d(TAG, "Initializing database from path: $dbPath")
                 
-                // Use the provided path directly
-                databasePath = dbPath
-                val dbFile = File(dbPath)
-                
-                // Create parent directories if they don't exist
-                dbFile.parentFile?.mkdirs()
-                
-                // Check if database file exists
-                if (!dbFile.exists()) {
-                    Log.e(TAG, "Database file does not exist at: $dbPath")
-                    throw IllegalStateException("Database file not found at: $dbPath")
+                // Handle special :memory: case
+                if (dbPath == ":memory:") {
+                    Log.d(TAG, "Creating in-memory database")
+                    databasePath = dbPath
+                    
+                    // Create in-memory database
+                    database = SQLiteDatabase.openOrCreateDatabase(":memory:", null)
+                } else {
+                    // Use the provided path directly
+                    databasePath = dbPath
+                    val dbFile = File(dbPath)
+                    
+                    // Create parent directories if they don't exist
+                    dbFile.parentFile?.mkdirs()
+                    
+                    // Check if database file exists
+                    if (!dbFile.exists()) {
+                        Log.e(TAG, "Database file does not exist at: $dbPath")
+                        throw IllegalStateException("Database file not found at: $dbPath")
+                    }
+                    
+                    Log.d(TAG, "Database file exists, size: ${dbFile.length()} bytes")
+                    
+                    // Open the database
+                    database = SQLiteDatabase.openDatabase(dbPath, null, SQLiteDatabase.OPEN_READWRITE)
                 }
-                
-                Log.d(TAG, "Database file exists, size: ${dbFile.length()} bytes")
-                
-                // Open the database
-                database = SQLiteDatabase.openDatabase(dbPath, null, SQLiteDatabase.OPEN_READWRITE)
                 
                 // Load Spatialite extension
                 database?.execSQL("SELECT load_extension('mod_spatialite')")
