@@ -12,6 +12,7 @@ import { focusManager, QueryClientProvider } from "@tanstack/react-query";
 import { AppStateStatus, Platform } from "react-native";
 import { useAppState, useOnlineManager } from "@/lib/tanstack/query/react-native-setup-hooks";
 import { queryClient } from "@/lib/tanstack/query/client";
+import { ExpoSpatialiteWrapper } from "@/lib/expo-spatialite/app-wrapper";
 
 function onAppStateChange(status: AppStateStatus) {
   // React Query already supports in web browser refetch on window focus by default
@@ -39,14 +40,16 @@ export default function RootLayout() {
       <PaperProvider theme={paperTheme}>
         <GestureHandlerRootView style={{ flex: 1 }}>
           <StatusBar style={colorScheme === "dark" ? "light" : "dark"} />
-          <QueryClientProvider client={queryClient}>
-            <ThemeProvider value={colorScheme === "dark" ? DarkTheme : DefaultTheme}>
-              <Stack>
-                <Stack.Screen name="(container)" options={{ headerShown: false }} />
-                <Stack.Screen name="+not-found" />
-              </Stack>
-            </ThemeProvider>
-          </QueryClientProvider>
+          <ExpoSpatialiteWrapper>
+            <QueryClientProvider client={queryClient}>
+              <ThemeProvider value={colorScheme === "dark" ? DarkTheme : DefaultTheme}>
+                <Stack>
+                  <Stack.Screen name="(container)" options={{ headerShown: false }} />
+                  <Stack.Screen name="+not-found" />
+                </Stack>
+              </ThemeProvider>
+            </QueryClientProvider>
+          </ExpoSpatialiteWrapper>
           <GlobalSnackbar />
         </GestureHandlerRootView>
       </PaperProvider>
