@@ -1,1 +1,0 @@
-/home/dennis/Desktop/code/react-native/lokeshen/modules/expo-spatialite/android/src/main/java/expo/modules/spatialite/ExpoSpatialiteModule.kt

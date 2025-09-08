@@ -1,4 +1,4 @@
-import { registerWebModule, NativeModule } from 'expo';
+import { NativeModule, registerWebModule } from 'expo';
 
 class ExpoSpatialiteModule extends NativeModule {
   getSpatialiteVersion(): string {
@@ -14,6 +14,10 @@ class ExpoSpatialiteModule extends NativeModule {
   }
 
   async initializeDatabase(): Promise<boolean> {
+    throw new Error('ExpoSpatialite is not available on web');
+  }
+
+  async testFileHandling(): Promise<any> {
     throw new Error('ExpoSpatialite is not available on web');
   }
 };

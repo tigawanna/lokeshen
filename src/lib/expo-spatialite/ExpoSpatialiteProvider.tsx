@@ -32,8 +32,7 @@ export interface ExpoSpatialiteProviderProps {
    * The location of the database file. Can be relative, absolute, or ':memory:' for in-memory database.
    * @default Uses FileSystem.documentDirectory
    */
-  location?: string;
-
+  location?: ':memory:' | (string & {});
   /**
    * Import a bundled database file from assets.
    * @example
@@ -253,6 +252,7 @@ async function setupDatabaseAsync({
   onInit,
 }: Pick<ExpoSpatialiteProviderProps, "databaseName" | "location" | "assetSource" | "onInit">): Promise<string> {
   // Create database path
+  
   const dbPath = location 
     ? `${location.replace(/\/$/, '')}/${databaseName}` 
     : createDatabasePath(databaseName);

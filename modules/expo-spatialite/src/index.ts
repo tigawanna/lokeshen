@@ -5,23 +5,19 @@ import ExpoSpatialiteModule from './ExpoSpatialiteModule';
 
 // Import types
 import type {
-  InitDatabaseResult,
-  QueryResult,
-  StatementResult,
   CloseDatabaseResult,
   ImportAssetDatabaseResult,
-  SpatialiteParam
+  InitDatabaseResult,
+  QueryResult,
+  SpatialiteParam,
+  StatementResult
 } from './ExpoSpatialite.types';
 
 // Re-export core types
 export type {
-  SpatialiteRow,
-  SpatialiteParam as SpatialiteParam,
-  QueryResult as CoreQueryResult,
-  StatementResult as CoreStatementResult,
-  InitResult,
-  ImportResult,
-  CloseResult
+  CloseResult, QueryResult as CoreQueryResult,
+  StatementResult as CoreStatementResult, ImportResult, InitResult, SpatialiteParam as SpatialiteParam, SpatialiteRow,
+  TestFileHandlingResult
 } from './ExpoSpatialiteModule';
 
 // Export view props
@@ -164,5 +160,21 @@ export async function closeDatabase(): Promise<CloseDatabaseResult> {
   return {
     success: result.success,
     message: result.message
+  };
+}
+
+/**
+ * Test file handling - reads file or creates it with "new file" content
+ * @param filePath The path to the file to test
+ * @returns Test result with file content and creation status
+ */
+export async function testFileHandling(filePath: string): Promise<TestFileHandlingResult> {
+  const result = await ExpoSpatialiteModule.testFileHandling(filePath);
+  
+  return {
+    success: result.success,
+    lines: result.lines,
+    fileCreated: result.fileCreated,
+    error: result.error
   };
 }

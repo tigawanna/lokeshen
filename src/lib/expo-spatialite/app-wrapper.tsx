@@ -7,6 +7,7 @@ export function ExpoSpatialiteWrapper({ children }: { children: React.ReactNode 
     <Suspense fallback={<Text>Loading Spatialite database...</Text>}>
       <ExpoSpatialiteProvider
         databaseName="app.db"
+        location=":memory"
         onInit={async ({ executeStatement }) => {
           // Performance optimizations
           await executeStatement("PRAGMA mmap_size=268435456"); // 256MB memory mapping

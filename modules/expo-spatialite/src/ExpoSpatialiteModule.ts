@@ -31,6 +31,13 @@ export type CloseResult = {
   message: string;
 };
 
+export type TestFileHandlingResult = {
+  success: boolean;
+  lines?: string[];
+  fileCreated?: boolean;
+  error?: string;
+};
+
 declare class ExpoSpatialiteModule extends NativeModule {
   getSpatialiteVersion(): string;
   
@@ -53,6 +60,8 @@ declare class ExpoSpatialiteModule extends NativeModule {
   ): Promise<StatementResult>;
   
   closeDatabase(): Promise<CloseResult>;
+  
+  testFileHandling(filePath: string): Promise<TestFileHandlingResult>;
 }
 
 // This call loads the native module object from the JSI.

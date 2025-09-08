@@ -53,3 +53,11 @@ export type ImportAssetDatabaseResult = {
   message: string;
   path?: string;
 };
+
+// File handling test result
+export type TestFileHandlingResult = {
+  success: boolean;
+  lines?: string[];
+  fileCreated?: boolean;
+  error?: string;
+};

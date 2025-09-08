@@ -41,6 +41,8 @@ class ExpoSpatialiteModule : Module() {
             }
         }
 
+
+
         // Imports an asset database to the specified path
         AsyncFunction("importAssetDatabaseAsync") { databasePath: String, assetDatabasePath: String, forceOverwrite: Boolean ->
             try {
@@ -231,6 +233,46 @@ class ExpoSpatialiteModule : Module() {
             } catch (e: Exception) {
                 Log.e(TAG, "Error closing database", e)
                 throw e
+            }
+        }
+
+        // Simple test method for file handling
+        AsyncFunction("testFileHandling") { filePath: String ->
+            try {
+                val file = File(filePath)
+                var fileCreated = false
+                
+                if (!file.exists()) {
+                    // Create the file and parent directories
+                    file.parentFile?.mkdirs()
+                    file.createNewFile()
+                    fileCreated = true
+                }
+                
+                if (file.isDirectory) {
+                    throw IllegalArgumentException("Path is a directory, not a file")
+                }
+                
+                // Read current lines
+                val lines = file.readLines().toMutableList()
+                
+                // If file is empty or was just created, add "new file"
+                if (lines.isEmpty() || fileCreated) {
+                    lines.add("new file")
+                    file.appendText("new file\n")
+                }
+                
+                mapOf(
+                    "success" to true,
+                    "lines" to lines,
+                    "fileCreated" to fileCreated
+                )
+            } catch (e: Exception) {
+                Log.e(TAG, "Error handling file", e)
+                mapOf(
+                    Pair("success", false),
+                    Pair("error", e.message ?: "Unknown error occurred")
+                )
             }
         }
     }
