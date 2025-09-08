@@ -1,7 +1,7 @@
 import { Asset } from "expo-asset";
 import * as FileSystem from "expo-file-system";
 import ExpoSpatialiteModule from './ExpoSpatialiteModule';
-export { default as ExpoSpatialiteView } from './ExpoSpatialiteView';
+
 
 // Import types
 import type {
