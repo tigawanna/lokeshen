@@ -35,9 +35,14 @@
           "backgroundColor": "#ffffff"
         }
       ],
-      "./modules/expo-spatialite-room/plugin",
-      "expo-asset",
-      "expo-sqlite"
+      [
+        "expo-asset",
+        {
+          "assets": [
+            "./assets/kenya_wards.db"
+          ]
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true

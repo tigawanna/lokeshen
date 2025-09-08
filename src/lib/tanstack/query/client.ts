@@ -2,8 +2,7 @@ import { MutationCache, QueryClient } from "@tanstack/react-query";
 
 
 export const queryKeyPrefixes = {
- "db":"db",
-  viewer: "wards",
+  db: "db",
 } as const;
 
 

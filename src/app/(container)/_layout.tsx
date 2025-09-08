@@ -9,7 +9,7 @@ import {
   importDatabaseFromAssetAsync,
   initDatabase,
 } from "@/modules/expo-spatialite-room/src";
-import { Surface,Text } from "react-native-paper";
+import { Surface, Text } from "react-native-paper";
 
 // this grouped routes  (contaner) layout exists because tanstcak query provider is defined in the root layout making it hard to useQuery in that layout
 
@@ -48,11 +48,11 @@ export default function ContainerLayout() {
   if (isPending) {
     return <LoadingFallback />;
   }
-  if(data?.error){
-    return(
-      <Surface style={{flex:1,justifyContent:"center",alignItems:"center",padding:20}}>
+  if (data?.error) {
+    return (
+      <Surface style={{ flex: 1, justifyContent: "center", alignItems: "center", padding: 20 }}>
         <Text variant="titleLarge">Error loading database</Text>
-        <Text style={{marginTop:10 ,paddingHorizontal:20}}>{data.error}</Text>
+        <Text style={{ marginTop: 10, paddingHorizontal: 20 }}>{data.error}</Text>
       </Surface>
     );
   }
