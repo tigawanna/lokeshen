@@ -5,6 +5,7 @@ export class QueryBuilder<T extends Record<string, any>> {
   private tableName: string;
   private selectFields: string[] = ["*"];
   private whereConditions: { field: string; operator: string; value: any }[] = [];
+  private joinClauses: string[] = [];
   private limitValue?: number;
   private offsetValue?: number;
   private orderByField?: string;
@@ -40,9 +41,28 @@ export class QueryBuilder<T extends Record<string, any>> {
     return this;
   }
 
+  join(table: string, condition: string): QueryBuilder<T> {
+    this.joinClauses.push(`JOIN ${table} ON ${condition}`);
+    return this;
+  }
+
+  leftJoin(table: string, condition: string): QueryBuilder<T> {
+    this.joinClauses.push(`LEFT JOIN ${table} ON ${condition}`);
+    return this;
+  }
+
+  innerJoin(table: string, condition: string): QueryBuilder<T> {
+    this.joinClauses.push(`INNER JOIN ${table} ON ${condition}`);
+    return this;
+  }
+
   async execute(): Promise<T[]> {
     let query = `SELECT ${this.selectFields.join(", ")} FROM ${this.tableName}`;
     const params: any[] = [];
+
+    if (this.joinClauses.length > 0) {
+      query += ` ${this.joinClauses.join(" ")}`;
+    }
 
     if (this.whereConditions.length > 0) {
       const whereClause = this.whereConditions

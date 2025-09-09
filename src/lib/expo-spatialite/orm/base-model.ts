@@ -161,6 +161,63 @@ export abstract class BaseModel {
   }
 
   /**
+   * Insert multiple records at once
+   * @example
+   * ```ts
+   * const users = await User.insertMany<User>([
+   *   { name: "John", email: "john@example.com" },
+   *   { name: "Jane", email: "jane@example.com" },
+   *   { name: "Bob", email: "bob@example.com" }
+   * ]);
+   * console.log(`Inserted ${users} records`);
+   * ```
+   */
+  async insertMany<T extends Record<string, any>>(records: Partial<T>[]): Promise<number> {
+    if (records.length === 0) return 0;
+
+    const fields = Object.keys(records[0]);
+    const placeholders = fields.map(() => "?").join(", ");
+    const valuesClause = records.map(() => `(${placeholders})`).join(", ");
+    
+    const query = `INSERT INTO ${this.tableName} (${fields.join(", ")}) VALUES ${valuesClause}`;
+    const values = records.flatMap(record => Object.values(record));
+    
+    const result = await executeStatement(query, values);
+    return result.rowsAffected;
+  }
+
+  /**
+   * Insert or replace records (upsert)
+   * @example
+   * ```ts
+   * const user = await User.insertOrReplace<User>({
+   *   id: 1,
+   *   name: "Updated John",
+   *   email: "john.updated@example.com"
+   * });
+   * console.log(user.name); // "Updated John"
+   * ```
+   */
+  async insertOrReplace<T extends Record<string, any>>(data: Partial<T>): Promise<T> {
+    const fields = Object.keys(data);
+    const values = Object.values(data);
+    const placeholders = fields.map(() => "?").join(", ");
+
+    const query = `INSERT OR REPLACE INTO ${this.tableName} (${fields.join(", ")}) VALUES (${placeholders})`;
+    await executeStatement(query, values);
+
+    // Return the created/updated record
+    const lastIdResult = await executeQuery<{ id: number }>("SELECT last_insert_rowid() as id");
+    const id = lastIdResult.data[0].id;
+
+    const created = await this.findById<T>(id);
+    if (!created) {
+      throw new Error('Failed to retrieve inserted/updated record');
+    }
+    return created;
+  }
+
+  /**
    * Find records with cursor-based pagination
    * @example
    * ```ts
@@ -191,6 +248,67 @@ export abstract class BaseModel {
 
     query += ` ORDER BY ${cursorField} ASC LIMIT ?`;
     params.push(limit);
+
+    const result = await executeQuery<T>(query, params);
+    return result.data;
+  }
+
+  /**
+   * Find records with JOIN
+   * @example
+   * ```ts
+   * const usersWithProfiles = await User.findWithJoin<User & Profile>(
+   *   'profiles',
+   *   'users.id = profiles.user_id',
+   *   { 'users.active': 1 }
+   * );
+   * ```
+   */
+  async findWithJoin<T extends Record<string, any>>(
+    joinTable: string,
+    joinCondition: string,
+    conditions?: Record<string, any>
+  ): Promise<T[]> {
+    let query = `SELECT * FROM ${this.tableName} JOIN ${joinTable} ON ${joinCondition}`;
+    const params: any[] = [];
+
+    if (conditions) {
+      const whereClause = Object.keys(conditions)
+        .map(key => `${key} = ?`)
+        .join(" AND ");
+      query += ` WHERE ${whereClause}`;
+      params.push(...Object.values(conditions));
+    }
+
+    const result = await executeQuery<T>(query, params);
+    return result.data;
+  }
+
+  /**
+   * Find records with LEFT JOIN
+   * @example
+   * ```ts
+   * const usersWithOptionalProfiles = await User.findWithLeftJoin<User & Partial<Profile>>(
+   *   'profiles',
+   *   'users.id = profiles.user_id'
+   * );
+   * ```
+   */
+  async findWithLeftJoin<T extends Record<string, any>>(
+    joinTable: string,
+    joinCondition: string,
+    conditions?: Record<string, any>
+  ): Promise<T[]> {
+    let query = `SELECT * FROM ${this.tableName} LEFT JOIN ${joinTable} ON ${joinCondition}`;
+    const params: any[] = [];
+
+    if (conditions) {
+      const whereClause = Object.keys(conditions)
+        .map(key => `${key} = ?`)
+        .join(" AND ");
+      query += ` WHERE ${whereClause}`;
+      params.push(...Object.values(conditions));
+    }
 
     const result = await executeQuery<T>(query, params);
     return result.data;
