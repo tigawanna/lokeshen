@@ -155,16 +155,22 @@ class ExpoSpatialiteModule : Module() {
             }
         }
 
-        // Executes a SQL query
-        AsyncFunction("executeQuery") { query: String, params: List<Any>? ->
+        // Executes a SQL query (SELECT, WITH, PRAGMA queries) - returns data
+        AsyncFunction("executeQuery") { query: String, params: List<Any?>? ->
             try {
                 if (database == null) {
                     throw IllegalStateException("Database not initialized. Call initDatabase first.")
                 }
 
+                // Validate that this is actually a query that returns data
+                val statementType = getStatementType(query)
+                if (statementType == StatementType.MODIFY) {
+                    throw IllegalArgumentException("Use executeStatement for INSERT, UPDATE, DELETE statements")
+                }
+
                 Log.d(TAG, "Executing query: $query with params: $params")
 
-                val cursor = if (params != null && params.isNotEmpty()) {
+                val cursor = if (params != null && params.isNotEmpty() && hasPlaceholders(query)) {
                     database?.rawQuery(query, convertParamsToArray(params))
                 } else {
                     database?.rawQuery(query, null)
@@ -184,11 +190,17 @@ class ExpoSpatialiteModule : Module() {
             }
         }
 
-        // Executes a SQL statement (INSERT, UPDATE, DELETE)
-        AsyncFunction("executeStatement") { statement: String, params: List<Any>? ->
+        // Executes a SQL statement (INSERT, UPDATE, DELETE) - no data returned
+        AsyncFunction("executeStatement") { statement: String, params: List<Any?>? ->
             try {
                 if (database == null) {
                     throw IllegalStateException("Database not initialized. Call initDatabase first.")
+                }
+
+                // Validate that this is not a data-returning query
+                val statementType = getStatementType(statement)
+                if (statementType == StatementType.QUERY) {
+                    throw IllegalArgumentException("Use executeQuery for statements that return data")
                 }
 
                 Log.d(TAG, "Executing statement: $statement with params: $params")
@@ -198,17 +210,26 @@ class ExpoSpatialiteModule : Module() {
 
                 db.beginTransaction()
                 try {
-                    if (params != null && params.isNotEmpty()) {
+                    if (params != null && params.isNotEmpty() && hasPlaceholders(statement)) {
                         db.execSQL(statement, convertParamsToArray(params))
-                        // Get affected rows count
-                        val cursor = db.rawQuery("SELECT changes();", null)
-                        if (cursor.moveToFirst()) {
-                            rowsAffected = cursor.getInt(0)
+                        // Get affected rows count for INSERT/UPDATE/DELETE
+                        if (statementType == StatementType.MODIFY) {
+                            try {
+                                val cursor = db.rawQuery("SELECT changes();", null)
+                                if (cursor.moveToFirst()) {
+                                    rowsAffected = cursor.getInt(0)
+                                }
+                                cursor.close()
+                            } catch (e: Exception) {
+                                Log.w(TAG, "Could not get row count: ${e.message}")
+                                rowsAffected = -1
+                            }
+                        } else {
+                            rowsAffected = 0 // PRAGMA setters don't have row counts
                         }
-                        cursor.close()
                     } else {
                         db.execSQL(statement)
-                        rowsAffected = -1 // Unable to determine
+                        rowsAffected = if (statementType == StatementType.MODIFY) -1 else 0
                     }
                     db.setTransactionSuccessful()
                 } finally {
@@ -221,6 +242,30 @@ class ExpoSpatialiteModule : Module() {
                 )
             } catch (e: Exception) {
                 Log.e(TAG, "Error executing statement: $statement with params: $params", e)
+                throw e
+            }
+        }
+
+        // Special function for PRAGMA queries that return values
+        AsyncFunction("executePragmaQuery") { pragma: String ->
+            try {
+                if (database == null) {
+                    throw IllegalStateException("Database not initialized. Call initDatabase first.")
+                }
+
+                Log.d(TAG, "Executing PRAGMA query: $pragma")
+
+                // This is specifically for PRAGMA statements that return data
+                val cursor = database?.rawQuery(pragma, null)
+                val results = cursorToList(cursor)
+                cursor?.close()
+
+                mapOf(
+                    "success" to true,
+                    "data" to results
+                )
+            } catch (e: Exception) {
+                Log.e(TAG, "Error executing PRAGMA query: $pragma", e)
                 throw e
             }
         }
@@ -284,10 +329,48 @@ class ExpoSpatialiteModule : Module() {
         }
     }
 
+    // Enum to categorize SQL statement types
+    private enum class StatementType {
+        QUERY,      // SELECT, WITH, PRAGMA queries - returns data
+        MODIFY,     // INSERT, UPDATE, DELETE - modifies data
+        PRAGMA_SET, // PRAGMA setters - no return data
+        OTHER       // CREATE, DROP, etc.
+    }
+
+    // Helper function to determine statement type
+    private fun getStatementType(sql: String): StatementType {
+        val trimmedSql = sql.trim().uppercase()
+        return when {
+            trimmedSql.startsWith("SELECT") || trimmedSql.startsWith("WITH") -> StatementType.QUERY
+            trimmedSql.startsWith("INSERT") || trimmedSql.startsWith("UPDATE") || trimmedSql.startsWith("DELETE") -> StatementType.MODIFY
+            trimmedSql.startsWith("PRAGMA") -> {
+                // Check if it's a query (returns data) or setter (no return data)
+                if (trimmedSql.contains("=")) {
+                    StatementType.PRAGMA_SET // PRAGMA name=value (setter)
+                } else {
+                    StatementType.QUERY // PRAGMA name (query)
+                }
+            }
+            else -> StatementType.OTHER
+        }
+    }
+
+    // Helper function to check if SQL statement has placeholders
+    private fun hasPlaceholders(sql: String): Boolean {
+        // Remove string literals and comments to avoid false positives
+        val cleanedSql = sql
+            .replace("'[^']*'".toRegex(), "") // Remove single quoted strings
+            .replace("\"[^\"]*\"".toRegex(), "") // Remove double quoted strings
+            .replace("--.*".toRegex(), "") // Remove single line comments
+            .replace("/\\*[\\s\\S]*?\\*/".toRegex(), "") // Remove multi-line comments
+        return cleanedSql.contains("?")
+    }
+
     // Helper function to convert parameters list to array for rawQuery
-    private fun convertParamsToArray(params: List<Any>): Array<String> {
+    private fun convertParamsToArray(params: List<Any?>): Array<String?> {
         return params.map {
             when (it) {
+                null -> null
                 is Boolean -> if (it) "1" else "0"
                 else -> it.toString()
             }
