@@ -1,7 +1,6 @@
 import { Asset } from "expo-asset";
 import * as FileSystem from "expo-file-system";
-import ExpoSpatialiteModule from './ExpoSpatialiteModule';
-
+import ExpoSpatialiteModule from "./ExpoSpatialiteModule";
 
 // Import types
 import type {
@@ -10,18 +9,22 @@ import type {
   InitDatabaseResult,
   QueryResult,
   SpatialiteParam,
-  StatementResult
-} from './ExpoSpatialite.types';
+  StatementResult,
+  PragmaQueryResult,
+} from "./ExpoSpatialiteModule";
 
 // Re-export core types
 export type {
-  CloseResult, QueryResult as CoreQueryResult,
-  StatementResult as CoreStatementResult, ImportResult, InitResult, SpatialiteParam as SpatialiteParam, SpatialiteRow,
-  TestFileHandlingResult
-} from './ExpoSpatialiteModule';
+  CloseDatabaseResult,
+  ImportAssetDatabaseResult,
+  InitDatabaseResult,
+  QueryResult,
+  SpatialiteParam,
+  StatementResult,
+  PragmaQueryResult,
+} from "./ExpoSpatialiteModule";
 
 // Export view props
-export type { ExpoSpatialiteViewProps } from './ExpoSpatialite.types';
 
 /**
  * Get the Spatialite version
@@ -44,7 +47,7 @@ export function createDatabasePath(databaseName: string, directory?: string): st
   const fullPath = `${baseDir}${databaseName}`;
 
   // Return the path without file:// scheme for Android compatibility
-  return fullPath.replace('file://', '');
+  return fullPath.replace("file://", "");
 }
 
 /**
@@ -68,7 +71,7 @@ export async function importDatabaseFromAssetAsync(
   const path = createDatabasePath(databaseName, directory);
   return await ExpoSpatialiteModule.importAssetDatabaseAsync(
     path,
-    asset.localUri.replace('file://', ''),
+    asset.localUri.replace("file://", ""),
     forceOverwrite
   );
 }
@@ -90,11 +93,11 @@ export async function importAssetDatabaseAsync(
     assetDatabasePath,
     forceOverwrite
   );
-  
+
   return {
     success: result.success,
     message: result.message,
-    path: result.path
+    path: result.path,
   };
 }
 
@@ -105,30 +108,30 @@ export async function importAssetDatabaseAsync(
  */
 export async function initDatabase(databasePath: string): Promise<InitDatabaseResult> {
   const result = await ExpoSpatialiteModule.initDatabase(databasePath);
-  
+
   return {
     success: result.success,
-    path: result.path || '',
-    spatialiteVersion: result.spatialiteVersion
+    path: result.path || "",
+    spatialiteVersion: result.spatialiteVersion,
   };
 }
 
 /**
- * Execute a SQL query and return results
+ * Execute a SQL query and return results with generic type support
  * @param sql The SQL query to execute
  * @param params Optional parameters for the query
  * @returns Query result with rows of data
  */
-export async function executeQuery(
+export async function executeQuery<T extends Record<string, any> = Record<string, any>>(
   sql: string,
   params?: SpatialiteParam[]
-): Promise<QueryResult> {
+): Promise<QueryResult<T>> {
   const result = await ExpoSpatialiteModule.executeQuery(sql, params);
-  
+
   return {
     success: result.success,
     rowCount: result.rowCount,
-    data: result.data
+    data: result.data as T[],
   };
 }
 
@@ -143,10 +146,26 @@ export async function executeStatement(
   params?: SpatialiteParam[]
 ): Promise<StatementResult> {
   const result = await ExpoSpatialiteModule.executeStatement(sql, params);
-  
+
   return {
     success: result.success,
-    rowsAffected: result.rowsAffected
+    rowsAffected: result.rowsAffected,
+  };
+}
+
+/**
+ * Execute a PRAGMA query that returns results with generic type support
+ * @param pragma The PRAGMA statement to execute
+ * @returns PRAGMA query result with data
+ */
+export async function executePragmaQuery<T extends Record<string, any> = Record<string, any>>(
+  pragma: string
+): Promise<PragmaQueryResult<T>> {
+  const result = await ExpoSpatialiteModule.executePragmaQuery(pragma);
+
+  return {
+    success: result.success,
+    data: result.data as T[],
   };
 }
 
@@ -156,25 +175,9 @@ export async function executeStatement(
  */
 export async function closeDatabase(): Promise<CloseDatabaseResult> {
   const result = await ExpoSpatialiteModule.closeDatabase();
-  
-  return {
-    success: result.success,
-    message: result.message
-  };
-}
 
-/**
- * Test file handling - reads file or creates it with "new file" content
- * @param filePath The path to the file to test
- * @returns Test result with file content and creation status
- */
-export async function testFileHandling(filePath: string): Promise<TestFileHandlingResult> {
-  const result = await ExpoSpatialiteModule.testFileHandling(filePath);
-  
   return {
     success: result.success,
-    lines: result.lines,
-    fileCreated: result.fileCreated,
-    error: result.error
+    message: result.message,
   };
 }

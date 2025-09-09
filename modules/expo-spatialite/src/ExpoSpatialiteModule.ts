@@ -1,12 +1,12 @@
-import { NativeModule, requireNativeModule } from 'expo';
+import { NativeModule, requireNativeModule } from "expo";
 
 export type SpatialiteRow = { [key: string]: any };
 export type SpatialiteParam = string | number | boolean | null;
 
-export type QueryResult = {
+export type QueryResult<T extends SpatialiteRow = SpatialiteRow> = {
   success: boolean;
   rowCount: number;
-  data: SpatialiteRow[];
+  data: T[];
 };
 
 export type StatementResult = {
@@ -14,7 +14,7 @@ export type StatementResult = {
   rowsAffected: number;
 };
 
-export type InitResult = {
+export type InitDatabaseResult = {
   success: boolean;
   path: string | null;
   spatialiteVersion: string;
@@ -38,31 +38,50 @@ export type TestFileHandlingResult = {
   error?: string;
 };
 
+export type PragmaQueryResult<T extends SpatialiteRow = SpatialiteRow> = {
+  success: boolean;
+  data: T[];
+};
+
+  export type CloseDatabaseResult = {
+    success: boolean;
+    message: string;
+  };
+
+  export type ImportAssetDatabaseResult = {
+    success: boolean;
+    message: string;
+    path?: string;
+  };
+
+
+
 declare class ExpoSpatialiteModule extends NativeModule {
   getSpatialiteVersion(): string;
-  
+
   importAssetDatabaseAsync(
     databasePath: string,
     assetDatabasePath: string,
     forceOverwrite: boolean
   ): Promise<ImportResult>;
-  
-  initDatabase(databasePath: string): Promise<InitResult>;
-  
-  executeQuery(
+
+  initDatabase(databasePath: string): Promise<InitDatabaseResult>;
+
+  executeQuery<T extends SpatialiteRow = SpatialiteRow>(
     sql: string,
     params?: SpatialiteParam[]
-  ): Promise<QueryResult>;
-  
-  executeStatement(
-    sql: string,
-    params?: SpatialiteParam[]
-  ): Promise<StatementResult>;
-  
+  ): Promise<QueryResult<T>>;
+
+  executeStatement(sql: string, params?: SpatialiteParam[]): Promise<StatementResult>;
+
+  executePragmaQuery<T extends SpatialiteRow = SpatialiteRow>(
+    pragma: string
+  ): Promise<PragmaQueryResult<T>>;
+
   closeDatabase(): Promise<CloseResult>;
-  
+
   testFileHandling(filePath: string): Promise<TestFileHandlingResult>;
 }
 
 // This call loads the native module object from the JSI.
-export default requireNativeModule<ExpoSpatialiteModule>('ExpoSpatialite');
+export default requireNativeModule<ExpoSpatialiteModule>("ExpoSpatialite");

@@ -3,7 +3,10 @@ import {
   initDatabase,
   executeQuery,
   executeStatement,
+  executePragmaQuery,
+  getSpatialiteVersion,
   importDatabaseFromAssetAsync,
+
   closeDatabase,
   createDatabasePath
 } from "@/modules/expo-spatialite";
@@ -32,7 +35,7 @@ export interface ExpoSpatialiteProviderProps {
    * The location of the database file. Can be relative, absolute, or ':memory:' for in-memory database.
    * @default Uses FileSystem.documentDirectory
    */
-  location?: ':memory:' | (string & {});
+  location?: ":memory:" | (string & {});
   /**
    * Import a bundled database file from assets.
    * @example
@@ -52,9 +55,10 @@ export interface ExpoSpatialiteProviderProps {
    * You can use this to run database migrations or other setup tasks.
    */
   onInit?: (context: {
-    initDatabase: (path: string) => Promise<any>;
-    executeQuery: (sql: string, params?: any[]) => Promise<any>;
-    executeStatement: (sql: string, params?: any[]) => Promise<any>;
+    initDatabase: typeof initDatabase;
+    executeQuery: typeof executeQuery;
+    executePragmaQuery: typeof executePragmaQuery;
+    executeStatement: typeof executeStatement;
   }) => Promise<void>;
 
   /**
@@ -292,7 +296,7 @@ async function setupDatabaseAsync({
 
   // Run initialization hook if provided
   if (onInit != null) {
-    await onInit({ initDatabase, executeQuery, executeStatement });
+    await onInit({ initDatabase, executeQuery, executeStatement,executePragmaQuery });
   }
 
   return dbPath;
