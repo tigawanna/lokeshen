@@ -39,7 +39,23 @@ export interface ExpoSpatialiteProviderProps {
    * Import a bundled database file from assets.
    * @example
    * ```ts
+   * // Direct usage with require
    * assetSource={{ assetId: require('../assets/databases/sample.db') }}
+   * 
+   * // With Asset.fromModule and forceOverwrite
+   * const asset = await Asset.fromModule(require("../assets/databases/sample.db")).downloadAsync();
+   * assetSource={{
+   *   assetId: asset,
+   *   forceOverwrite: true
+   * }}
+   * 
+   * // With downloaded asset from URL
+   * const asset = Asset.fromURI('https://example.com/database.db');
+   * await asset.downloadAsync();
+   * assetSource={{
+   *   assetId: asset,
+   *   forceOverwrite: false
+   * }}
    * ```
    */
   assetSource?: ExpoSpatialiteProviderAssetSource;
@@ -74,7 +90,7 @@ export interface ExpoSpatialiteProviderProps {
   onError?: (error: Error) => void;
 
   /**
-   * Enable [`React.Suspense`](https://react.dev/reference/react/Suspense  ) integration.
+   * Enable [`React.Suspense`](https://react.dev/reference/react/Suspense    ) integration.
    * @default false
    */
   useSuspense?: boolean;
@@ -182,7 +198,6 @@ function ExpoSpatialiteProviderNonSuspense({
   onInit,
   onError,
 }: Omit<ExpoSpatialiteProviderProps, "useSuspense">) {
-  // console.log(" force overwrte === ",forceOverwrite)
   const databaseRef = useRef<any | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
@@ -270,7 +285,7 @@ async function setupDatabaseAsync({
 
   // Handle file-based databases
   if (assetSource != null) {
-    // Import asset database first
+    // Import asset database first - ensure asset is downloaded and pass correct path
     try {
       await importDatabaseFromAssetAsync(
         databaseName,
@@ -290,7 +305,6 @@ async function setupDatabaseAsync({
     dbPath = createDatabasePath(databaseName, location);
 
     // If forceOverwrite is true, we might want to handle database recreation
-    // This would depend on your specific implementation needs
     if (forceOverwrite) {
       console.log("Force overwrite requested for database:", dbPath);
       // You could implement database recreation logic here if needed

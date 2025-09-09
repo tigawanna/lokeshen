@@ -6,9 +6,9 @@ export function ExpoSpatialiteWrapper({ children }: { children: React.ReactNode 
   return (
     <Suspense fallback={<LoadingFallback />}>
       <ExpoSpatialiteProvider
-        // databaseName="lokeshen.db"
-        databaseName="tapp.db"
-        // assetSource={{ assetId: require("@/assets/kenya_wards.db"),forceOverwrite:true }}
+        databaseName="lokeshen.db"
+        // databaseName="tpp.db"
+        assetSource={{ assetId: require("@/assets/kenya_wards.db"),forceOverwrite:true }}
         // location="test"
 
         onInit={async ({ executeStatement, executeQuery, executePragmaQuery }) => {

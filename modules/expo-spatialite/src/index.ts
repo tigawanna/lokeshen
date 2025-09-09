@@ -24,8 +24,6 @@ export type {
   PragmaQueryResult,
 } from "./ExpoSpatialiteModule";
 
-// Export view props
-
 /**
  * Get the Spatialite version
  * @returns The Spatialite version string
@@ -43,10 +41,16 @@ export function createDatabasePath(databaseName: string, directory?: string): st
     throw new Error("Document directory is not available");
   }
 
-  const baseDir = directory ? `${documentsDirectory}${directory}/` : documentsDirectory;
+  // If directory is provided and absolute, use it directly
+  if (directory && (directory.startsWith('/') || directory.startsWith('file://'))) {
+    const baseDir = directory.replace('file://', '');
+    return `${baseDir.replace(/\/$/, '')}/${databaseName}`.replace('file://', '');
+  }
+  
+  // If directory is relative or undefined, use default structure
+  const baseDir = directory ? `${documentsDirectory}${directory}/` : `${documentsDirectory}Spatialite/`;
   const fullPath = `${baseDir}${databaseName}`;
-
-  // Return the path without file:// scheme for Android compatibility
+  
   return fullPath.replace("file://", "");
 }
 
@@ -64,15 +68,21 @@ export async function importDatabaseFromAssetAsync(
   forceOverwrite: boolean = false,
   directory?: string
 ) {
-  // console.log({forceOverwrite})
+  // Download the asset first to ensure it's available
   const asset = await Asset.fromModule(assetId).downloadAsync();
   if (!asset.localUri) {
     throw new Error(`Unable to get the localUri from asset ${assetId}`);
   }
-  const path = createDatabasePath(databaseName, directory);
+  
+  // Use the correct path format for the native module
+  const databasePath = createDatabasePath(databaseName, directory);
+  
+  // Pass the asset path without file:// prefix to match native module expectations
+  const assetPath = asset.localUri.replace("file://", "");
+  
   return await ExpoSpatialiteModule.importAssetDatabaseAsync(
-    path,
-    asset.localUri.replace("file://", ""),
+    databasePath,
+    assetPath,
     forceOverwrite
   );
 }
@@ -166,7 +176,7 @@ export async function executePragmaQuery<T extends Record<string, any> = Record<
 
   return {
     success: result.success,
-    data: result.data as T[],
+    data:result.data as T[],
   };
 }
 

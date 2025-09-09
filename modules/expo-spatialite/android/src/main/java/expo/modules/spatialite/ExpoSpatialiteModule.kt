@@ -7,8 +7,11 @@ import android.util.Log
 import org.spatialite.database.SQLiteDatabase
 import org.spatialite.database.SQLiteStatement
 import android.database.Cursor
+import android.database.sqlite.SQLiteException
 import java.io.File
 import java.io.FileOutputStream
+import java.io.FileInputStream
+import java.io.IOException
 import android.net.Uri
 import android.os.Build
 import androidx.annotation.RequiresApi
@@ -60,11 +63,14 @@ class ExpoSpatialiteModule : Module() {
 
                 Log.d(TAG, "Initializing database from path: $dbPath")
 
+                var isNewDatabase = false // Declare the variable here
+
                 // Handle special :memory: case
                 if (dbPath == ":memory:") {
                     Log.d(TAG, "Creating in-memory database")
                     databasePath = dbPath
                     database = SQLiteDatabase.openOrCreateDatabase(":memory:", null)
+                    isNewDatabase = true // Set to true for in-memory databases
                 } else {
                     // Use Expo's pattern: resolve relative paths against app's files directory
                     val baseDir = context.filesDir
@@ -92,21 +98,25 @@ class ExpoSpatialiteModule : Module() {
                         }
                     }
 
-                    var isNewDatabase = false
-
                     // Check if database file exists
                     if (!dbFile.exists()) {
                         Log.d(TAG, "Database file does not exist, will be created at: ${dbFile.absolutePath}")
                         isNewDatabase = true
                     } else {
                         Log.d(TAG, "Database file exists, size: ${dbFile.length()} bytes")
+                        // Check for locale issues and attempt recovery if needed
+                        isNewDatabase = handleLocaleConflict(dbFile)
                     }
 
-                    // Open the database (will create if it doesn't exist)
+                    // Open the database with flags that avoid locale issues
+                    val openFlags = SQLiteDatabase.OPEN_READWRITE or
+                            SQLiteDatabase.CREATE_IF_NECESSARY or
+                            SQLiteDatabase.NO_LOCALIZED_COLLATORS
+
                     database = SQLiteDatabase.openDatabase(
                         dbFile.absolutePath,
                         null,
-                        SQLiteDatabase.OPEN_READWRITE or SQLiteDatabase.CREATE_IF_NECESSARY
+                        openFlags
                     )
 
                     // If it's a new database, initialize Spatialite metadata
@@ -136,7 +146,7 @@ class ExpoSpatialiteModule : Module() {
                     "success" to true,
                     "path" to databasePath,
                     "spatialiteVersion" to version,
-                    "isNewDatabase" to (databasePath != ":memory:" && !File(databasePath ?: "").exists())
+                    "isNewDatabase" to isNewDatabase
                 )
             } catch (e: Exception) {
                 Log.e(TAG, "Error initializing database from path: $dbPath", e)
@@ -144,12 +154,20 @@ class ExpoSpatialiteModule : Module() {
             }
         }
 
-        // Imports an asset database to the specified path
+// Imports an asset database to the specified path
         AsyncFunction("importAssetDatabaseAsync") { databasePath: String, assetDatabasePath: String, forceOverwrite: Boolean ->
             try {
                 val context = appContext.reactContext ?: throw IllegalStateException("React context not available")
 
                 Log.d(TAG, "Importing asset database from: $assetDatabasePath to: $databasePath")
+
+                // Handle both Expo asset URIs and direct file paths
+                val sourcePath = if (assetDatabasePath.startsWith("/")) {
+                    assetDatabasePath // Already an absolute path
+                } else {
+                    // Try to resolve as asset from app bundle
+                    "assets/$assetDatabasePath"
+                }
 
                 // Use Expo's pattern: resolve relative paths against app's files directory
                 val baseDir = context.filesDir
@@ -181,12 +199,28 @@ class ExpoSpatialiteModule : Module() {
                     )
                 }
 
-                // Open the asset file as a stream
-                val assetStream = context.assets.open(assetDatabasePath)
-
-                // Copy the asset file to the destination
-                FileOutputStream(dbFile).use { output ->
-                    assetStream.copyTo(output)
+                // Try to copy the file - handle both asset and direct file access
+                try {
+                    // First try as a direct file (for Expo cached assets)
+                    val sourceFile = File(sourcePath)
+                    if (sourceFile.exists()) {
+                        Log.d(TAG, "Copying database from direct file: $sourcePath")
+                        FileInputStream(sourceFile).use { input ->
+                            FileOutputStream(dbFile).use { output ->
+                                input.copyTo(output)
+                            }
+                        }
+                    } else {
+                        // Fallback to asset manager (for bundled assets)
+                        Log.d(TAG, "Copying database from app assets: $sourcePath")
+                        val assetStream = context.assets.open(sourcePath)
+                        FileOutputStream(dbFile).use { output ->
+                            assetStream.copyTo(output)
+                        }
+                    }
+                } catch (e: Exception) {
+                    Log.e(TAG, "Failed to copy database file", e)
+                    throw e
                 }
 
                 Log.d(TAG, "Database imported successfully to: ${dbFile.absolutePath}")
@@ -335,6 +369,67 @@ class ExpoSpatialiteModule : Module() {
             }
         }
 
+    }
+
+    // Helper method to handle locale conflicts by backing up and recreating the database
+    private fun handleLocaleConflict(dbFile: File): Boolean {
+        if (!dbFile.exists()) return true
+
+        try {
+            // Try to open the database to check for locale issues
+            val testDb = SQLiteDatabase.openDatabase(
+                dbFile.absolutePath,
+                null,
+                SQLiteDatabase.OPEN_READONLY or SQLiteDatabase.NO_LOCALIZED_COLLATORS
+            )
+            testDb.close()
+            return false // No issues found
+        } catch (e: SQLiteException) {
+            if (e.message?.contains("Failed to change locale") == true) {
+                Log.w(TAG, "Locale conflict detected in database: ${dbFile.absolutePath}")
+                return recoverFromLocaleError(dbFile)
+            }
+        } catch (e: Exception) {
+            Log.w(TAG, "Unexpected error when testing database: ${e.message}")
+        }
+
+        return false
+    }
+
+    // Recovery method that backs up the database, deletes it, and marks it as new
+    private fun recoverFromLocaleError(dbFile: File): Boolean {
+        try {
+            // Create backup file path
+            val timestamp = System.currentTimeMillis()
+            val backupFile = File(dbFile.absolutePath + ".backup_$timestamp")
+
+            // Attempt to backup the problematic database
+            if (dbFile.exists()) {
+                try {
+                    FileInputStream(dbFile).use { input ->
+                        FileOutputStream(backupFile).use { output ->
+                            input.copyTo(output)
+                        }
+                    }
+                    Log.d(TAG, "Backed up problematic database to: ${backupFile.absolutePath}")
+                } catch (ioe: IOException) {
+                    Log.w(TAG, "Failed to backup database, proceeding with deletion anyway", ioe)
+                }
+            }
+
+            // Delete the problematic database
+            if (dbFile.delete()) {
+                Log.d(TAG, "Deleted problematic database file: ${dbFile.absolutePath}")
+                Log.i(TAG, "Database backed up to: ${backupFile.absolutePath} (if backup was successful)")
+                return true // Mark as new database so it gets initialized
+            } else {
+                Log.e(TAG, "Failed to delete problematic database file: ${dbFile.absolutePath}")
+                return false
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to recover from locale error for database: ${dbFile.absolutePath}", e)
+            return false
+        }
     }
 
     // Enum to categorize SQL statement types
