@@ -42,15 +42,17 @@ export function createDatabasePath(databaseName: string, directory?: string): st
   }
 
   // If directory is provided and absolute, use it directly
-  if (directory && (directory.startsWith('/') || directory.startsWith('file://'))) {
-    const baseDir = directory.replace('file://', '');
-    return `${baseDir.replace(/\/$/, '')}/${databaseName}`.replace('file://', '');
+  if (directory && (directory.startsWith("/") || directory.startsWith("file://"))) {
+    const baseDir = directory.replace("file://", "");
+    return `${baseDir.replace(/\/$/, "")}/${databaseName}`.replace("file://", "");
   }
-  
+
   // If directory is relative or undefined, use default structure
-  const baseDir = directory ? `${documentsDirectory}${directory}/` : `${documentsDirectory}Spatialite/`;
+  const baseDir = directory
+    ? `${documentsDirectory}${directory}/`
+    : `${documentsDirectory}Spatialite/`;
   const fullPath = `${baseDir}${databaseName}`;
-  
+
   return fullPath.replace("file://", "");
 }
 
@@ -73,13 +75,13 @@ export async function importDatabaseFromAssetAsync(
   if (!asset.localUri) {
     throw new Error(`Unable to get the localUri from asset ${assetId}`);
   }
-  
+
   // Use the correct path format for the native module
   const databasePath = createDatabasePath(databaseName, directory);
-  
+
   // Pass the asset path without file:// prefix to match native module expectations
   const assetPath = asset.localUri.replace("file://", "");
-  
+
   return await ExpoSpatialiteModule.importAssetDatabaseAsync(
     databasePath,
     assetPath,
@@ -176,7 +178,27 @@ export async function executePragmaQuery<T extends Record<string, any> = Record<
 
   return {
     success: result.success,
-    data:result.data as T[],
+    data: result.data as T[],
+  };
+}
+
+/**
+ * Execute a raw SQL query for absolute edge cases - bypasses all validation
+ * Use this only when you need to execute complex queries that don't fit standard patterns
+ * @param sql The raw SQL query to execute
+ * @param params Optional parameters for the query
+ * @returns Query result with rows of data
+ */
+export async function executeRawQuery<T extends Record<string, any> = Record<string, any>>(
+  sql: string,
+  params?: SpatialiteParam[]
+): Promise<QueryResult<T>> {
+  const result = await ExpoSpatialiteModule.executeRawQuery(sql, params);
+
+  return {
+    success: result.success,
+    rowCount: result.rowCount,
+    data: result.data as T[],
   };
 }
 

@@ -20,13 +20,13 @@ export type InitDatabaseResult = {
   spatialiteVersion: string;
 };
 
-export type ImportResult = {
+export type ImportAssetDatabaseResult = {
   success: boolean;
   message: string;
   path?: string;
 };
 
-export type CloseResult = {
+export type CloseDatabaseResult = {
   success: boolean;
   message: string;
 };
@@ -43,17 +43,6 @@ export type PragmaQueryResult<T extends SpatialiteRow = SpatialiteRow> = {
   data: T[];
 };
 
-  export type CloseDatabaseResult = {
-    success: boolean;
-    message: string;
-  };
-
-  export type ImportAssetDatabaseResult = {
-    success: boolean;
-    message: string;
-    path?: string;
-  };
-
 
 
 declare class ExpoSpatialiteModule extends NativeModule {
@@ -63,7 +52,7 @@ declare class ExpoSpatialiteModule extends NativeModule {
     databasePath: string,
     assetDatabasePath: string,
     forceOverwrite: boolean
-  ): Promise<ImportResult>;
+  ): Promise<ImportAssetDatabaseResult>;
 
   initDatabase(databasePath: string): Promise<InitDatabaseResult>;
 
@@ -78,7 +67,12 @@ declare class ExpoSpatialiteModule extends NativeModule {
     pragma: string
   ): Promise<PragmaQueryResult<T>>;
 
-  closeDatabase(): Promise<CloseResult>;
+  executeRawQuery<T extends SpatialiteRow = SpatialiteRow>(
+    sql: string,
+    params?: SpatialiteParam[]
+  ): Promise<QueryResult<T>>;
+
+  closeDatabase(): Promise<CloseDatabaseResult>;
 
   testFileHandling(filePath: string): Promise<TestFileHandlingResult>;
 }

@@ -154,7 +154,7 @@ class ExpoSpatialiteModule : Module() {
             }
         }
 
-// Imports an asset database to the specified path
+        // Imports an asset database to the specified path
         AsyncFunction("importAssetDatabaseAsync") { databasePath: String, assetDatabasePath: String, forceOverwrite: Boolean ->
             try {
                 val context = appContext.reactContext ?: throw IllegalStateException("React context not available")
@@ -347,6 +347,36 @@ class ExpoSpatialiteModule : Module() {
                 )
             } catch (e: Exception) {
                 Log.e(TAG, "Error executing PRAGMA query: $pragma", e)
+                throw e
+            }
+        }
+
+        // Raw query execution for absolute edge cases - bypasses all validation
+        AsyncFunction("executeRawQuery") { query: String, params: List<Any?>? ->
+            try {
+                if (database == null) {
+                    throw IllegalStateException("Database not initialized. Call initDatabase first.")
+                }
+
+                Log.d(TAG, "Executing RAW query: $query with params: $params")
+
+                // Execute without any validation - for absolute edge cases
+                val cursor = if (params != null && params.isNotEmpty() && hasPlaceholders(query)) {
+                    database?.rawQuery(query, convertParamsToArray(params))
+                } else {
+                    database?.rawQuery(query, null)
+                }
+
+                val results = cursorToList(cursor)
+                cursor?.close()
+
+                mapOf(
+                    "success" to true,
+                    "rowCount" to results.size,
+                    "data" to results
+                )
+            } catch (e: Exception) {
+                Log.e(TAG, "Error executing RAW query: $query with params: $params", e)
                 throw e
             }
         }
