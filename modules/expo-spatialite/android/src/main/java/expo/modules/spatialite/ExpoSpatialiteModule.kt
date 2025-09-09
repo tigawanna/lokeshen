@@ -335,54 +335,6 @@ class ExpoSpatialiteModule : Module() {
             }
         }
 
-        // Simple test method for file handling
-        AsyncFunction("testFileHandling") { filePath: String ->
-            try {
-                val context = appContext.reactContext ?: throw IllegalStateException("React context not available")
-
-                // Use Expo's pattern for test files too
-                val baseDir = context.filesDir
-                val file = if (File(filePath).isAbsolute) {
-                    File(filePath)
-                } else {
-                    File(baseDir, "Spatialite" + File.separator + filePath)
-                }
-
-                var fileCreated = false
-
-                if (!file.exists()) {
-                    // Create the file and parent directories
-                    file.parentFile?.mkdirs()
-                    file.createNewFile()
-                    fileCreated = true
-                }
-
-                if (file.isDirectory) {
-                    throw IllegalArgumentException("Path is a directory, not a file")
-                }
-
-                // Read current lines
-                val lines = file.readLines().toMutableList()
-
-                // If file is empty or was just created, add "new file"
-                if (lines.isEmpty() || fileCreated) {
-                    lines.add("new file")
-                    file.appendText("new file\n")
-                }
-
-                mapOf(
-                    "success" to true,
-                    "lines" to lines,
-                    "fileCreated" to fileCreated
-                )
-            } catch (e: Exception) {
-                Log.e(TAG, "Error handling file", e)
-                mapOf(
-                    "success" to false,
-                    "error" to (e.message ?: "Unknown error occurred")
-                )
-            }
-        }
     }
 
     // Enum to categorize SQL statement types

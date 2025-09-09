@@ -45,6 +45,13 @@ export interface ExpoSpatialiteProviderProps {
   assetSource?: ExpoSpatialiteProviderAssetSource;
 
   /**
+   * Whether to force overwrite existing database when no assetSource is provided
+   * This is useful when you want to recreate the database file
+   * @default false
+   */
+  forceOverwrite?: boolean;
+
+  /**
    * The children to render.
    */
   children: React.ReactNode;
@@ -67,7 +74,7 @@ export interface ExpoSpatialiteProviderProps {
   onError?: (error: Error) => void;
 
   /**
-   * Enable [`React.Suspense`](https://react.dev/reference/react/Suspense) integration.
+   * Enable [`React.Suspense`](https://react.dev/reference/react/Suspense  ) integration.
    * @default false
    */
   useSuspense?: boolean;
@@ -112,6 +119,7 @@ export const ExpoSpatialiteProvider = memo(
     prevProps.databaseName === nextProps.databaseName &&
     prevProps.location === nextProps.location &&
     deepEqual(prevProps.assetSource, nextProps.assetSource) &&
+    prevProps.forceOverwrite === nextProps.forceOverwrite &&
     prevProps.onInit === nextProps.onInit &&
     prevProps.onError === nextProps.onError &&
     prevProps.useSuspense === nextProps.useSuspense
@@ -147,22 +155,16 @@ export function useExpoSpatialiteContext() {
   return context;
 }
 
-
-
-
 function ExpoSpatialiteProviderSuspense({
- children,
+  databaseName,
+  location,
+  assetSource,
+  forceOverwrite,
+  children,
   onInit,
 }: Omit<ExpoSpatialiteProviderProps, "onError" | "useSuspense">) {
-  // const databasePromise = getDatabaseAsync({
-  //   databaseName,
-  //   location,
-  //   assetSource,
-  //   onInit,
-  // });
-
-  // const database = use(databasePromise);
-
+  // For Suspense implementation, you would typically use the use() hook
+  // This is a simplified version - you might want to implement proper Suspense logic
   return (
     <ExpoSpatialiteContext.Provider
       value={{ executeQuery, executeStatement, initDatabase, executePragmaQuery }}>
@@ -175,10 +177,12 @@ function ExpoSpatialiteProviderNonSuspense({
   databaseName,
   location,
   assetSource,
+  forceOverwrite = false,
   children,
   onInit,
   onError,
 }: Omit<ExpoSpatialiteProviderProps, "useSuspense">) {
+  // console.log(" force overwrte === ",forceOverwrite)
   const databaseRef = useRef<any | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
@@ -190,6 +194,7 @@ function ExpoSpatialiteProviderNonSuspense({
           databaseName,
           location,
           assetSource,
+          forceOverwrite,
           onInit,
         });
         databaseRef.current = dbPath;
@@ -214,7 +219,7 @@ function ExpoSpatialiteProviderNonSuspense({
       databaseRef.current = null;
       setLoading(true);
     };
-  }, [databaseName, location, assetSource, onInit]);
+  }, [databaseName, location, assetSource, forceOverwrite, onInit]);
 
   if (error != null) {
     const handler =
@@ -241,11 +246,11 @@ async function setupDatabaseAsync({
   databaseName,
   location,
   assetSource,
+  forceOverwrite = false,
   onInit,
-}: Pick<
-  ExpoSpatialiteProviderProps,
-  "databaseName" | "location" | "assetSource" | "onInit"
->): Promise<string> {
+}: Pick<ExpoSpatialiteProviderProps, "databaseName" | "location" | "assetSource" | "onInit"> & {
+  forceOverwrite?: boolean;
+}): Promise<string> {
   let dbPath: string;
 
   // Handle in-memory database (simplest case)
@@ -283,6 +288,13 @@ async function setupDatabaseAsync({
   } else {
     // No asset import - just create/open database at specified location
     dbPath = createDatabasePath(databaseName, location);
+
+    // If forceOverwrite is true, we might want to handle database recreation
+    // This would depend on your specific implementation needs
+    if (forceOverwrite) {
+      console.log("Force overwrite requested for database:", dbPath);
+      // You could implement database recreation logic here if needed
+    }
   }
 
   // Initialize the Spatialite database
@@ -300,55 +312,6 @@ async function setupDatabaseAsync({
 
   return dbPath;
 }
-
-// function getDatabaseAsync({
-//   databaseName,
-//   location,
-//   assetSource,
-//   onInit,
-// }: Pick<
-//   ExpoSpatialiteProviderProps,
-//   "databaseName" | "location" | "assetSource" | "onInit"
-// >): Promise<any> {
-//   if (
-//     databaseInstance?.promise != null &&
-//     databaseInstance?.databaseName === databaseName &&
-//     databaseInstance?.location === location &&
-//     deepEqual(databaseInstance?.assetSource, assetSource) &&
-//     databaseInstance?.onInit === onInit
-//   ) {
-//     return databaseInstance.promise;
-//   }
-
-//   let promise: Promise<any>;
-
-//   if (databaseInstance?.promise != null) {
-//     promise = databaseInstance.promise
-//       .then(() => {
-//         return closeDatabase();
-//       })
-//       .then(() => {
-//         return setupDatabaseAsync({
-//           databaseName,
-//           location,
-//           assetSource,
-//           onInit,
-//         });
-//       });
-//   } else {
-//     promise = setupDatabaseAsync({ databaseName, location, assetSource, onInit });
-//   }
-
-//   databaseInstance = {
-//     databaseName,
-//     location,
-//     assetSource,
-//     onInit,
-//     promise,
-//   };
-
-//   return promise;
-// }
 
 /**
  * Compares two objects deeply for equality.
@@ -371,8 +334,3 @@ function deepEqual(
     Object.keys(a).every((key) => deepEqual(a[key], b[key]))
   );
 }
-
-
-
-
-

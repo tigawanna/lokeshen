@@ -2,16 +2,18 @@ import { LoadingFallback } from "@/components/state-screens/LoadingFallback";
 import { ExpoSpatialiteProvider } from "@/lib/expo-spatialite/ExpoSpatialiteProvider";
 import { Suspense } from "react";
 
-
 export function ExpoSpatialiteWrapper({ children }: { children: React.ReactNode }) {
   return (
     <Suspense fallback={<LoadingFallback />}>
       <ExpoSpatialiteProvider
-        databaseName="app.db"
+        // databaseName="lokeshen.db"
+        databaseName="tapp.db"
+        // assetSource={{ assetId: require("@/assets/kenya_wards.db"),forceOverwrite:true }}
         // location="test"
+
         onInit={async ({ executeStatement, executeQuery, executePragmaQuery }) => {
           // await executeStatement("PRAGMA synchronous=NORMAL"); // Faster writes
-          await executePragmaQuery("PRAGMA journal_mode=WAL"); // Write-Ahead Logging
+          // await executePragmaQuery("PRAGMA journal_mode=WAL"); // Write-Ahead Logging
           // await executeStatement("PRAGMA mmap_size=268435456"); // 256MB memory mapping
           const tables = await executeQuery(
             "SELECT name FROM sqlite_schema WHERE type='table' ORDER BY name;"

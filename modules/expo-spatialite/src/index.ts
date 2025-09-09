@@ -64,6 +64,7 @@ export async function importDatabaseFromAssetAsync(
   forceOverwrite: boolean = false,
   directory?: string
 ) {
+  // console.log({forceOverwrite})
   const asset = await Asset.fromModule(assetId).downloadAsync();
   if (!asset.localUri) {
     throw new Error(`Unable to get the localUri from asset ${assetId}`);
