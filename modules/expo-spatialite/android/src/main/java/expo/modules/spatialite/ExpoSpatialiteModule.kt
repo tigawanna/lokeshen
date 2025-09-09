@@ -27,6 +27,13 @@ class ExpoSpatialiteModule : Module() {
     override fun definition() = ModuleDefinition {
         Name(NAME)
 
+        Constants {
+            val defaultDatabaseDirectory = appContext.reactContext?.filesDir?.canonicalPath + File.separator + "Spatialite"
+            mapOf(
+                "defaultDatabaseDirectory" to defaultDatabaseDirectory
+            )
+        }
+
         // Function to get the Spatialite version
         Function("getSpatialiteVersion") {
             try {
@@ -59,30 +66,60 @@ class ExpoSpatialiteModule : Module() {
                     databasePath = dbPath
                     database = SQLiteDatabase.openOrCreateDatabase(":memory:", null)
                 } else {
-                    // Use the provided path directly
-                    databasePath = dbPath
-                    val dbFile = File(dbPath)
+                    // Use Expo's pattern: resolve relative paths against app's files directory
+                    val baseDir = context.filesDir
+                    val dbFile = if (File(dbPath).isAbsolute) {
+                        File(dbPath)
+                    } else {
+                        File(baseDir, "Spatialite" + File.separator + dbPath)
+                    }
 
                     // Create parent directories if they don't exist
-                    dbFile.parentFile?.mkdirs()
+                    val parentDir = dbFile.parentFile
+                    if (parentDir != null) {
+                        if (!parentDir.exists()) {
+                            Log.d(TAG, "Parent directory does not exist, attempting to create: ${parentDir.absolutePath}")
+                            val dirsCreated = parentDir.mkdirs()
+                            if (dirsCreated) {
+                                Log.d(TAG, "Successfully created parent directories")
+                            } else {
+                                Log.w(TAG, "Failed to create parent directories, checking if they exist now...")
+                                if (!parentDir.exists()) {
+                                    Log.e(TAG, "Parent directories could not be created: ${parentDir.absolutePath}")
+                                    throw IllegalStateException("Could not create parent directories for database path: ${dbFile.absolutePath}")
+                                }
+                            }
+                        }
+                    }
+
+                    var isNewDatabase = false
 
                     // Check if database file exists
                     if (!dbFile.exists()) {
-                        Log.e(TAG, "Database file does not exist at: $dbPath")
-                        throw IllegalStateException("Database file not found at: $dbPath")
+                        Log.d(TAG, "Database file does not exist, will be created at: ${dbFile.absolutePath}")
+                        isNewDatabase = true
+                    } else {
+                        Log.d(TAG, "Database file exists, size: ${dbFile.length()} bytes")
                     }
 
-                    Log.d(TAG, "Database file exists, size: ${dbFile.length()} bytes")
-                    database = SQLiteDatabase.openDatabase(dbPath, null, SQLiteDatabase.OPEN_READWRITE)
-                }
+                    // Open the database (will create if it doesn't exist)
+                    database = SQLiteDatabase.openDatabase(
+                        dbFile.absolutePath,
+                        null,
+                        SQLiteDatabase.OPEN_READWRITE or SQLiteDatabase.CREATE_IF_NECESSARY
+                    )
 
-                // Initialize Spatialite metadata if needed
-                try {
-                    // SpatiaLite should already be loaded - no need for load_extension
-                    database?.execSQL("SELECT InitSpatialMetaData();")
-                    Log.d(TAG, "Spatialite metadata initialized successfully")
-                } catch (e: Exception) {
-                    Log.d(TAG, "Spatialite metadata may already exist or failed to initialize", e)
+                    // If it's a new database, initialize Spatialite metadata
+                    if (isNewDatabase) {
+                        try {
+                            database?.execSQL("SELECT InitSpatialMetaData();")
+                            Log.d(TAG, "Spatialite metadata initialized successfully for new database")
+                        } catch (e: Exception) {
+                            Log.d(TAG, "Spatialite metadata may already exist or failed to initialize", e)
+                        }
+                    }
+
+                    databasePath = dbFile.absolutePath
                 }
 
                 // Verify Spatialite is working
@@ -98,7 +135,8 @@ class ExpoSpatialiteModule : Module() {
                 mapOf(
                     "success" to true,
                     "path" to databasePath,
-                    "spatialiteVersion" to version
+                    "spatialiteVersion" to version,
+                    "isNewDatabase" to (databasePath != ":memory:" && !File(databasePath ?: "").exists())
                 )
             } catch (e: Exception) {
                 Log.e(TAG, "Error initializing database from path: $dbPath", e)
@@ -113,17 +151,26 @@ class ExpoSpatialiteModule : Module() {
 
                 Log.d(TAG, "Importing asset database from: $assetDatabasePath to: $databasePath")
 
-                // Handle both URI and regular file paths for destination
-                val destinationPath = if (databasePath.startsWith("file://")) {
-                    databasePath.toUri().path ?: throw IllegalArgumentException("Invalid destination path")
+                // Use Expo's pattern: resolve relative paths against app's files directory
+                val baseDir = context.filesDir
+                val dbFile = if (File(databasePath).isAbsolute) {
+                    File(databasePath)
                 } else {
-                    databasePath
+                    File(baseDir, "Spatialite" + File.separator + databasePath)
                 }
 
-                val dbFile = File(destinationPath)
-
                 // Create parent directories if they don't exist
-                dbFile.parentFile?.mkdirs()
+                val parentDir = dbFile.parentFile
+                if (parentDir != null) {
+                    if (!parentDir.exists()) {
+                        Log.d(TAG, "Parent directory does not exist, attempting to create: ${parentDir.absolutePath}")
+                        val dirsCreated = parentDir.mkdirs()
+                        if (!dirsCreated && !parentDir.exists()) {
+                            Log.e(TAG, "Could not create parent directories: ${parentDir.absolutePath}")
+                            throw IllegalStateException("Could not create parent directories for path: ${dbFile.absolutePath}")
+                        }
+                    }
+                }
 
                 // Check if database already exists and forceOverwrite is false
                 if (dbFile.exists() && !forceOverwrite) {
@@ -291,7 +338,16 @@ class ExpoSpatialiteModule : Module() {
         // Simple test method for file handling
         AsyncFunction("testFileHandling") { filePath: String ->
             try {
-                val file = File(filePath)
+                val context = appContext.reactContext ?: throw IllegalStateException("React context not available")
+
+                // Use Expo's pattern for test files too
+                val baseDir = context.filesDir
+                val file = if (File(filePath).isAbsolute) {
+                    File(filePath)
+                } else {
+                    File(baseDir, "Spatialite" + File.separator + filePath)
+                }
+
                 var fileCreated = false
 
                 if (!file.exists()) {
