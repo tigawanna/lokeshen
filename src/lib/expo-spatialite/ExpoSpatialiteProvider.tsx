@@ -4,11 +4,9 @@ import {
   executeQuery,
   executeStatement,
   executePragmaQuery,
-  getSpatialiteVersion,
   importDatabaseFromAssetAsync,
-
   closeDatabase,
-  createDatabasePath
+  createDatabasePath,
 } from "@/modules/expo-spatialite";
 
 export interface ExpoSpatialiteProviderAssetSource {
@@ -17,7 +15,7 @@ export interface ExpoSpatialiteProviderAssetSource {
    * @example require('../assets/databases/sample.db')
    */
   assetId: number;
-  
+
   /**
    * Whether to force overwrite existing database
    * @default false
@@ -36,6 +34,7 @@ export interface ExpoSpatialiteProviderProps {
    * @default Uses FileSystem.documentDirectory
    */
   location?: ":memory:" | (string & {});
+
   /**
    * Import a bundled database file from assets.
    * @example
@@ -80,6 +79,7 @@ export interface ExpoSpatialiteProviderProps {
 const ExpoSpatialiteContext = createContext<{
   executeQuery: (sql: string, params?: any[]) => Promise<any>;
   executeStatement: (sql: string, params?: any[]) => Promise<any>;
+  executePragmaQuery: (pragma: string) => Promise<any>;
   initDatabase: (path: string) => Promise<any>;
 } | null>(null);
 
@@ -88,11 +88,11 @@ const ExpoSpatialiteContext = createContext<{
  * All descendants of this component will be able to access the database using the [`useExpoSpatialiteContext`](#useexpospatialitecontext) hook.
  */
 export const ExpoSpatialiteProvider = memo(
-  function ExpoSpatialiteProvider({ 
-    children, 
-    onError, 
-    useSuspense = false, 
-    ...props 
+  function ExpoSpatialiteProvider({
+    children,
+    onError,
+    useSuspense = false,
+    ...props
   }: ExpoSpatialiteProviderProps) {
     if (onError != null && useSuspense) {
       throw new Error("Cannot use `onError` with `useSuspense`, use error boundaries instead.");
@@ -147,36 +147,25 @@ export function useExpoSpatialiteContext() {
   return context;
 }
 
-//#region Internals
-type DatabaseInstanceType = Pick<
-  ExpoSpatialiteProviderProps,
-  "databaseName" | "location" | "assetSource" | "onInit"
-> & {
-  promise: Promise<any> | null;
-};
 
-let databaseInstance: DatabaseInstanceType | null = null;
+
 
 function ExpoSpatialiteProviderSuspense({
-  databaseName,
-  location,
-  assetSource,
-  children,
+ children,
   onInit,
 }: Omit<ExpoSpatialiteProviderProps, "onError" | "useSuspense">) {
-  const databasePromise = getDatabaseAsync({
-    databaseName,
-    location,
-    assetSource,
-    onInit,
-  });
+  // const databasePromise = getDatabaseAsync({
+  //   databaseName,
+  //   location,
+  //   assetSource,
+  //   onInit,
+  // });
 
-  const database = use(databasePromise);
+  // const database = use(databasePromise);
 
   return (
-    <ExpoSpatialiteContext.Provider 
-      value={{ executeQuery, executeStatement, initDatabase }}
-    >
+    <ExpoSpatialiteContext.Provider
+      value={{ executeQuery, executeStatement, initDatabase, executePragmaQuery }}>
       {children}
     </ExpoSpatialiteContext.Provider>
   );
@@ -241,9 +230,8 @@ function ExpoSpatialiteProviderNonSuspense({
   }
 
   return (
-    <ExpoSpatialiteContext.Provider 
-      value={{ executeQuery, executeStatement, initDatabase }}
-    >
+    <ExpoSpatialiteContext.Provider
+      value={{ executeQuery, executeStatement, initDatabase, executePragmaQuery }}>
       {children}
     </ExpoSpatialiteContext.Provider>
   );
@@ -254,99 +242,113 @@ async function setupDatabaseAsync({
   location,
   assetSource,
   onInit,
-}: Pick<ExpoSpatialiteProviderProps, "databaseName" | "location" | "assetSource" | "onInit">): Promise<string> {
+}: Pick<
+  ExpoSpatialiteProviderProps,
+  "databaseName" | "location" | "assetSource" | "onInit"
+>): Promise<string> {
   let dbPath: string;
-  
-  // Import asset database first if specified
-  if (assetSource != null) {
-    // For asset imports, always use file-based storage first
-    const tempPath = location && location !== ":memory:" 
-      ? location 
-      : undefined;
-      
-    await importDatabaseFromAssetAsync(
-      databaseName,
-      assetSource.assetId,
-      assetSource.forceOverwrite ?? false,
-      tempPath
-    );
-    
-    // If we want memory but imported from asset, we still need the file path
-    if (location === ":memory:") {
+
+  // Handle in-memory database (simplest case)
+  if (location === ":memory:") {
+    if (assetSource != null) {
       console.warn("Cannot use :memory: with assetSource. Using file-based database instead.");
-      dbPath = createDatabasePath(databaseName);
+      // Fall through to file-based logic
     } else {
-      dbPath = location 
-        ? `${location.replace(/\/$/, '')}/${databaseName}` 
-        : createDatabasePath(databaseName);
-    }
-  } else {
-    // No asset import - use specified location
-    if (location === ":memory:") {
       dbPath = ":memory:";
-    } else {
-      dbPath = location 
-        ? `${location.replace(/\/$/, '')}/${databaseName}` 
-        : createDatabasePath(databaseName);
+      await initDatabase(dbPath);
+      if (onInit != null) {
+        await onInit({ initDatabase, executeQuery, executeStatement, executePragmaQuery });
+      }
+      return dbPath;
     }
   }
 
+  // Handle file-based databases
+  if (assetSource != null) {
+    // Import asset database first
+    try {
+      await importDatabaseFromAssetAsync(
+        databaseName,
+        assetSource.assetId,
+        assetSource.forceOverwrite ?? false,
+        location // Pass location as directory parameter
+      );
+    } catch (error) {
+      console.error("Failed to import database from asset:", error);
+      throw error;
+    }
+
+    // Construct the correct path that matches what importDatabaseFromAssetAsync created
+    dbPath = createDatabasePath(databaseName, location);
+  } else {
+    // No asset import - just create/open database at specified location
+    dbPath = createDatabasePath(databaseName, location);
+  }
+
   // Initialize the Spatialite database
-  await initDatabase(dbPath);
+  try {
+    await initDatabase(dbPath);
+  } catch (error) {
+    console.error("Failed to initialize database at path:", dbPath, error);
+    throw error;
+  }
 
   // Run initialization hook if provided
   if (onInit != null) {
-    await onInit({ initDatabase, executeQuery, executeStatement,executePragmaQuery });
+    await onInit({ initDatabase, executeQuery, executeStatement, executePragmaQuery });
   }
 
   return dbPath;
 }
 
-function getDatabaseAsync({
-  databaseName,
-  location,
-  assetSource,
-  onInit,
-}: Pick<ExpoSpatialiteProviderProps, "databaseName" | "location" | "assetSource" | "onInit">): Promise<any> {
-  if (
-    databaseInstance?.promise != null &&
-    databaseInstance?.databaseName === databaseName &&
-    databaseInstance?.location === location &&
-    deepEqual(databaseInstance?.assetSource, assetSource) &&
-    databaseInstance?.onInit === onInit
-  ) {
-    return databaseInstance.promise;
-  }
+// function getDatabaseAsync({
+//   databaseName,
+//   location,
+//   assetSource,
+//   onInit,
+// }: Pick<
+//   ExpoSpatialiteProviderProps,
+//   "databaseName" | "location" | "assetSource" | "onInit"
+// >): Promise<any> {
+//   if (
+//     databaseInstance?.promise != null &&
+//     databaseInstance?.databaseName === databaseName &&
+//     databaseInstance?.location === location &&
+//     deepEqual(databaseInstance?.assetSource, assetSource) &&
+//     databaseInstance?.onInit === onInit
+//   ) {
+//     return databaseInstance.promise;
+//   }
 
-  let promise: Promise<any>;
+//   let promise: Promise<any>;
 
-  if (databaseInstance?.promise != null) {
-    promise = databaseInstance.promise
-      .then(() => {
-        return closeDatabase();
-      })
-      .then(() => {
-        return setupDatabaseAsync({
-          databaseName,
-          location,
-          assetSource,
-          onInit,
-        });
-      });
-  } else {
-    promise = setupDatabaseAsync({ databaseName, location, assetSource, onInit });
-  }
+//   if (databaseInstance?.promise != null) {
+//     promise = databaseInstance.promise
+//       .then(() => {
+//         return closeDatabase();
+//       })
+//       .then(() => {
+//         return setupDatabaseAsync({
+//           databaseName,
+//           location,
+//           assetSource,
+//           onInit,
+//         });
+//       });
+//   } else {
+//     promise = setupDatabaseAsync({ databaseName, location, assetSource, onInit });
+//   }
 
-  databaseInstance = {
-    databaseName,
-    location,
-    assetSource,
-    onInit,
-    promise,
-  };
+//   databaseInstance = {
+//     databaseName,
+//     location,
+//     assetSource,
+//     onInit,
+//     promise,
+//   };
 
-  return promise;
-}
+//   return promise;
+// }
 
 /**
  * Compares two objects deeply for equality.
@@ -370,50 +372,7 @@ function deepEqual(
   );
 }
 
-//#region Private Suspense API similar to `React.use`
-// Referenced from https://github.com/vercel/swr/blob/1d8110900d1aee3747199bfb377b149b7ff6848e/_internal/src/types.ts#L27-L31
-type ReactUsePromise<T, E extends Error = Error> = Promise<T> & {
-  status?: "pending" | "fulfilled" | "rejected";
-  value?: T;
-  reason?: E;
-};
 
-/**
- * A custom hook like [`React.use`](https://react.dev/reference/react/use) hook using private Suspense implementation.
- */
-function use<T>(promise: Promise<T> | ReactUsePromise<T>) {
-  if (isReactUsePromise(promise)) {
-    if (promise.status === "fulfilled") {
-      if (promise.value === undefined) {
-        throw new Error("[use] Unexpected undefined value from promise");
-      }
-      return promise.value;
-    } else if (promise.status === "rejected") {
-      throw promise.reason;
-    } else if (promise.status === "pending") {
-      throw promise;
-    }
-    throw new Error("[use] Promise is in an invalid state");
-  }
 
-  const suspensePromise = promise as ReactUsePromise<T>;
-  suspensePromise.status = "pending";
-  suspensePromise.then(
-    (result: T) => {
-      suspensePromise.status = "fulfilled";
-      suspensePromise.value = result;
-    },
-    (reason) => {
-      suspensePromise.status = "rejected";
-      suspensePromise.reason = reason;
-    }
-  );
-  throw suspensePromise;
-}
 
-function isReactUsePromise<T>(
-  promise: Promise<T> | ReactUsePromise<T>
-): promise is ReactUsePromise<T> {
-  return typeof promise === "object" && promise !== null && "status" in promise;
-}
-//#endregion
+
