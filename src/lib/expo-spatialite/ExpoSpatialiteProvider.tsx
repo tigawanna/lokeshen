@@ -100,10 +100,10 @@ export interface ExpoSpatialiteProviderProps {
  * Create a context for the Expo Spatialite database
  */
 const ExpoSpatialiteContext = createContext<{
-  executeQuery: (sql: string, params?: any[]) => Promise<any>;
-  executeStatement: (sql: string, params?: any[]) => Promise<any>;
-  executePragmaQuery: (pragma: string) => Promise<any>;
-  initDatabase: (path: string) => Promise<any>;
+  executeQuery: typeof executeQuery;
+  executeStatement: typeof executeStatement;
+  executePragmaQuery: typeof executePragmaQuery;
+  initDatabase: typeof initDatabase;
 } | null>(null);
 
 /**

@@ -1,3 +1,4 @@
+import { KenyanWards } from "@/components/wards/KenyanWards";
 import { SpatialiteVersion } from "@/lib/expo-spatialite/SpatialiteVersion";
 import { View } from "react-native";
 import { Text } from "react-native-paper";
@@ -8,7 +9,8 @@ export default function HomeScreen() {
   return (
     <View style={{ flex: 1, paddingTop: top, justifyContent: "center", alignItems: "center" }}>
       <Text variant="headlineMedium">Home screen</Text>
-      <SpatialiteVersion/>
+      {/* <SpatialiteVersion /> */}
+      <KenyanWards />
     </View>
   );
 }

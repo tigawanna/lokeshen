@@ -8,18 +8,19 @@ export function ExpoSpatialiteWrapper({ children }: { children: React.ReactNode 
       <ExpoSpatialiteProvider
         databaseName="lokeshen.db"
         // databaseName="tpp.db"
-        assetSource={{ assetId: require("@/assets/kenya_wards.db"),forceOverwrite:true }}
+        // assetSource={{ assetId: require("@/assets/kenya_wards.db"), forceOverwrite: true }}
         // location="test"
 
         onInit={async ({ executeStatement, executeQuery, executePragmaQuery }) => {
           // await executeStatement("PRAGMA synchronous=NORMAL"); // Faster writes
-          // await executePragmaQuery("PRAGMA journal_mode=WAL"); // Write-Ahead Logging
+          const funs = await executeQuery(
+            `
+            SELECT name FROM sqlite_master WHERE type = 'table' AND name = 'spatial_ref_sys'
+
+            `
+          ); // Write-Ahead Logging
+          console.log("\n 📝 PRAGMA function_list:", funs);
           // await executeStatement("PRAGMA mmap_size=268435456"); // 256MB memory mapping
-          const tables = await executeQuery(
-            "SELECT name FROM sqlite_schema WHERE type='table' ORDER BY name;"
-          );
-          // console.log("Existing tables:", JSON.stringify(tables,null,2));
-          console.log("Existing tables:", tables.rowCount);
           // Performance optimizations
         }}
         onError={(error) => {
