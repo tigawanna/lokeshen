@@ -39,24 +39,24 @@ export class ExpoSpatialiteDrizzle {
     }));
   }
 
-  // Drizzle driver interface
-  async driver(sql: string, params: unknown[], method: Sqlite3Method): Promise<RawResultData> {
+  // Drizzle driver interface - must be arrow function to preserve 'this'
+  driver = async (sql: string, params: unknown[], method: Sqlite3Method): Promise<RawResultData> => {
     if (/^begin\b/i.test(sql)) {
       console.warn(
         "Drizzle's transaction method cannot isolate transactions from outside queries. It is recommended to use the transaction method of ExpoSpatialiteDrizzle instead."
       );
     }
     return this.exec(sql, params as SpatialiteParam[], method);
-  }
+  };
 
-  // Drizzle batch driver interface
-  async batchDriver(queries: { sql: string; params: unknown[]; method: Sqlite3Method }[]): Promise<RawResultData[]> {
+  // Drizzle batch driver interface - must be arrow function to preserve 'this'
+  batchDriver = async (queries: { sql: string; params: unknown[]; method: Sqlite3Method }[]): Promise<RawResultData[]> => {
     return this.execBatch(queries.map(q => ({
       sql: q.sql,
       params: q.params as SpatialiteParam[],
       method: q.method
     })));
-  }
+  };
 
   // Transaction method for proper isolation
   async transaction<T>(fn: (tx: ExpoSpatialiteDrizzle) => Promise<T>): Promise<T> {
