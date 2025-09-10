@@ -4,7 +4,7 @@ import * as schema  from './schema';
 
 const spatialiteAdapter = new ExpoSpatialiteDrizzle();
 
-export const db = drizzle(spatialiteAdapter.driver, spatialiteAdapter.batchDriver, {
+export const db = drizzle(spatialiteAdapter.driver,{
     schema
 });
 
