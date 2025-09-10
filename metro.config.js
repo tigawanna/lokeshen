@@ -9,5 +9,6 @@ config.resolver.assetExts = [
     'db', // Add this line
     'sqlite',
 ];
+config.resolver.sourceExts.push('sql');
 
 module.exports = config;

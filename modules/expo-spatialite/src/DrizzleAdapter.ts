@@ -1,5 +1,5 @@
+import type { SpatialiteParam, TransactionStatement } from './ExpoSpatialiteModule';
 import ExpoSpatialiteModule from './ExpoSpatialiteModule';
-import type { SpatialiteRow, SpatialiteParam, TransactionStatement, TransactionResult } from './ExpoSpatialiteModule';
 
 export type Sqlite3Method = 'run' | 'get' | 'all' | 'values';
 

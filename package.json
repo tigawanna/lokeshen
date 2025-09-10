@@ -12,9 +12,9 @@
     "ios": "expo run:ios",
     "web": "expo start --web",
     "lint": "expo lint",
-    "generate-wards-sql": "node src/spatialite/generate-sql.js",
-    "generate-wards-sql-test": "node src/spatialite/generate-sql.js 5",
-    "generate-preloaded-db": "node scripts/generate-preloaded-db.js"
+    "gen":"drizzle-kit generate",
+    "push":"drizzle-kit push",
+    "migrate":"drizzle-kit migrate"
   },
   "dependencies": {
     "@expo/vector-icons": "^14.1.0",
@@ -26,6 +26,7 @@
     "@tanstack/query-db-collection": "^0.2.11",
     "@tanstack/react-db": "^0.1.12",
     "@tanstack/react-query": "^5.87.1",
+    "babel-plugin-inline-import": "^3.0.0",
     "drizzle-orm": "^0.44.5",
     "expo": "~53.0.22",
     "expo-asset": "~11.1.7",
