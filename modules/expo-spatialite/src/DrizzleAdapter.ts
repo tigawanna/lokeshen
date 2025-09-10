@@ -22,6 +22,7 @@ export class ExpoSpatialiteDrizzle {
       case 'values':
       default:
         const allResult = await ExpoSpatialiteModule.executeQuery(sql, params);
+        console.log("allResult", JSON.stringify(allResult.data,null,2));
         return { rows: allResult.data };
     }
   }
@@ -41,11 +42,11 @@ export class ExpoSpatialiteDrizzle {
 
   // Drizzle driver interface - must be arrow function to preserve 'this'
   driver = async (sql: string, params: unknown[], method: Sqlite3Method): Promise<RawResultData> => {
-    if (/^begin\b/i.test(sql)) {
-      console.warn(
-        "Drizzle's transaction method cannot isolate transactions from outside queries. It is recommended to use the transaction method of ExpoSpatialiteDrizzle instead."
-      );
-    }
+    // if (/^begin\b/i.test(sql)) {
+    //   console.warn(
+    //     "Drizzle's transaction method cannot isolate transactions from outside queries. It is recommended to use the transaction method of ExpoSpatialiteDrizzle instead."
+    //   );
+    // }
     return this.exec(sql, params as SpatialiteParam[], method);
   };
 

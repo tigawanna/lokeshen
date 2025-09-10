@@ -13,13 +13,13 @@ export function ExpoSpatialiteWrapper({ children }: { children: React.ReactNode 
 
         onInit={async ({ executeStatement, executeQuery, executePragmaQuery }) => {
           // await executeStatement("PRAGMA synchronous=NORMAL"); // Faster writes
-          const funs = await executeQuery(
-            `
-            SELECT name FROM sqlite_master WHERE type = 'table' AND name = 'spatial_ref_sys'
+          // const funs = await executeQuery(
+          //   `
+          //   SELECT name FROM sqlite_master WHERE type = 'table' AND name = 'spatial_ref_sys'
 
-            `
-          ); // Write-Ahead Logging
-          console.log("\n 📝 PRAGMA function_list:", funs);
+          //   `
+          // ); // Write-Ahead Logging
+          // console.log("\n 📝 PRAGMA function_list:", funs);
           // await executeStatement("PRAGMA mmap_size=268435456"); // 256MB memory mapping
           // Performance optimizations
         }}
