@@ -1,4 +1,4 @@
-import { sqliteTable, integer, text, real } from "drizzle-orm/sqlite-core";
+import { sqliteTable, integer, text,blob } from "drizzle-orm/sqlite-core";
 import { geometry } from "./drizzlespatialite-types";
 import { sql } from "drizzle-orm";
 
@@ -14,13 +14,30 @@ export const kenyaWards = sqliteTable("kenya_wards", {
   geom: geometry("geom"),
 });
 
-export const notes = sqliteTable("notes", {
-  id: integer("id").primaryKey({ autoIncrement: true }),
-  title: text("title"),
-  content: text("content").notNull(),
-  type: text("type").notNull().default("note"), // note, reminder, list, number
-  value: real("value"), // for numeric values
-  createdAt: text("created_at").notNull().default(sql`(CURRENT_TIMESTAMP)`),
-  updatedAt: text("updated_at").notNull().default(sql`(CURRENT_TIMESTAMP)`),
-  location: geometry("location"), // point geometry for location
+
+
+export const notes = sqliteTable('notes', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  title: text('title'),
+  content: text('content').notNull(),
+  contentHtml: text('content_html'),
+  type: text('type').default('note').notNull(),
+  status: text('status').default('active'),
+  tags: text('tags'),
+  meta: text('metadata', { mode: 'json' }),
+  imagePath: text('image_path'),
+  imageBlob: blob('image_blob'), // BLOB for storing images directly
+  priority: integer('priority').default(0),
+  lastViewed: text('last_viewed'),
+  reminderAt: text('reminder_at'),
+  completedAt: text('completed_at'),
+  dueDate: text('due_date'),
+  createdAt: text('created_at')
+    .default(sql`(CURRENT_TIMESTAMP)`)
+    .notNull(),
+  updatedAt: text('updated_at')
+    .default(sql`(CURRENT_TIMESTAMP)`)
+    .notNull(),
+  // Spatial column (will be populated by Spatialite)
+  locationPoint: text('location_point'), // Added by AddGeometryColumn
 });
