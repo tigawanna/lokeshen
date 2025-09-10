@@ -45,6 +45,23 @@ export type PragmaQueryResult<T extends SpatialiteRow = SpatialiteRow> = {
 
 
 
+export type TransactionStatement = {
+  sql: string;
+  params?: SpatialiteParam[];
+  method?: 'run' | 'get' | 'all' | 'values';
+};
+
+export type TransactionResult = {
+  success: boolean;
+  data?: any;
+  rowsAffected?: number;
+  rowCount?: number;
+  totalRowsAffected?: number;
+  results?: TransactionResult[];
+};
+
+
+
 declare class ExpoSpatialiteModule extends NativeModule {
   getSpatialiteVersion(): string;
 
@@ -75,7 +92,11 @@ declare class ExpoSpatialiteModule extends NativeModule {
   closeDatabase(): Promise<CloseDatabaseResult>;
 
   testFileHandling(filePath: string): Promise<TestFileHandlingResult>;
+
+  executeTransaction(statements: TransactionStatement[], useTransaction?: boolean): Promise<TransactionResult[]>;
 }
 
 // This call loads the native module object from the JSI.
 export default requireNativeModule<ExpoSpatialiteModule>("ExpoSpatialite");
+
+

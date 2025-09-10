@@ -381,6 +381,111 @@ class ExpoSpatialiteModule : Module() {
             }
         }
 
+        // Executes multiple statements with optional transaction wrapping
+        AsyncFunction("executeTransaction") { statements: List<Map<String, Any?>>, useTransaction: Boolean? ->
+            try {
+                if (database == null) {
+                    throw IllegalStateException("Database not initialized. Call initDatabase first.")
+                }
+
+                val shouldUseTransaction = useTransaction ?: true
+                Log.d(TAG, "Executing ${statements.size} statements (transaction: $shouldUseTransaction)")
+
+                val db = database!!
+                val results = mutableListOf<Map<String, Any?>>()
+                var totalRowsAffected = 0
+
+                if (shouldUseTransaction) {
+                    db.beginTransaction()
+                }
+
+                try {
+                    for (statement in statements) {
+                        val sql = statement["sql"] as? String
+                            ?: throw IllegalArgumentException("Missing 'sql' field in statement")
+                        val params = statement["params"] as? List<Any?>
+                        val method = statement["method"] as? String ?: "run"
+
+                        val result = when (method) {
+                            "run" -> {
+                                if (params != null && params.isNotEmpty() && hasPlaceholders(sql)) {
+                                    db.execSQL(sql, convertParamsToArray(params))
+                                } else {
+                                    db.execSQL(sql)
+                                }
+                                val cursor = db.rawQuery("SELECT changes();", null)
+                                var rowsAffected = 0
+                                if (cursor.moveToFirst()) {
+                                    rowsAffected = cursor.getInt(0)
+                                }
+                                cursor.close()
+                                totalRowsAffected += rowsAffected
+                                mapOf(
+                                    "success" to true,
+                                    "rowsAffected" to rowsAffected
+                                )
+                            }
+                            "get" -> {
+                                val cursor = if (params != null && params.isNotEmpty() && hasPlaceholders(sql)) {
+                                    db.rawQuery(sql, convertParamsToArray(params))
+                                } else {
+                                    db.rawQuery(sql, null)
+                                }
+                                val data = if (cursor != null && cursor.moveToFirst()) {
+                                    val row = mutableMapOf<String, Any?>()
+                                    for (i in 0 until cursor.columnCount) {
+                                        val columnName = cursor.getColumnName(i)
+                                        row[columnName] = when (cursor.getType(i)) {
+                                            Cursor.FIELD_TYPE_NULL -> null
+                                            Cursor.FIELD_TYPE_INTEGER -> cursor.getLong(i)
+                                            Cursor.FIELD_TYPE_FLOAT -> cursor.getDouble(i)
+                                            Cursor.FIELD_TYPE_STRING -> cursor.getString(i)
+                                            Cursor.FIELD_TYPE_BLOB -> cursor.getBlob(i)
+                                            else -> null
+                                        }
+                                    }
+                                    row
+                                } else null
+                                cursor?.close()
+                                mapOf(
+                                    "success" to true,
+                                    "data" to data
+                                )
+                            }
+                            else -> {
+                                val cursor = if (params != null && params.isNotEmpty() && hasPlaceholders(sql)) {
+                                    db.rawQuery(sql, convertParamsToArray(params))
+                                } else {
+                                    db.rawQuery(sql, null)
+                                }
+                                val data = cursorToList(cursor)
+                                cursor?.close()
+                                mapOf(
+                                    "success" to true,
+                                    "data" to data,
+                                    "rowCount" to data.size
+                                )
+                            }
+                        }
+                        results.add(result)
+                    }
+                    
+                    if (shouldUseTransaction) {
+                        db.setTransactionSuccessful()
+                    }
+                } finally {
+                    if (shouldUseTransaction) {
+                        db.endTransaction()
+                    }
+                }
+
+                results
+            } catch (e: Exception) {
+                Log.e(TAG, "Error executing transaction", e)
+                throw e
+            }
+        }
+
         // Closes the database
         AsyncFunction("closeDatabase") {
             try {

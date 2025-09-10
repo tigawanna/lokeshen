@@ -2,6 +2,8 @@ import { Asset } from "expo-asset";
 import * as FileSystem from "expo-file-system";
 import ExpoSpatialiteModule from "./ExpoSpatialiteModule";
 
+
+
 // Import types
 import type {
   CloseDatabaseResult,
@@ -214,3 +216,6 @@ export async function closeDatabase(): Promise<CloseDatabaseResult> {
     message: result.message,
   };
 }
+
+// Export Drizzle adapter
+export { ExpoSpatialiteDrizzle } from './DrizzleAdapter';
